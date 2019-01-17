@@ -9,3 +9,5 @@ src/client/node_modules/
 src/client/package-lock.json
 src/db/env/
 src/server/env/
+.DS_Store
+
