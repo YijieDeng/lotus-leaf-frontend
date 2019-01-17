@@ -10,4 +10,6 @@ src/client/package-lock.json
 src/db/env/
 src/server/env/
 .DS_Store
-
+*/node_modules
+*/config.js
+*/package-lock.json
