@@ -2,13 +2,13 @@
 <div class="container" style="padding-top: 20px">
     <ul class="collapsible popout">
         <li class="active">
-        <div class="collapsible-header" style="font-size: 20px">Chart Options</div>
+        <div id="chart-options" class="collapsible-header" style="font-size: 20px">Chart Options</div>
         <div class="collapsible-body">
             <div class="container">
                 <div class="row">
                     <div class="input-field col s12" style="width: 60%">
-                        <select>
-                            <option value="" disabled selected>Topics</option>
+                        <select id="topic-select">
+                            <option value="" disabled selected>Select a Topic</option>
                             <option value="1">UW/Mercer</option>
                             <option value="2">UW/Alder</option>
                             <option value="3">UW/Solar</option>
@@ -30,11 +30,11 @@
                         <input style="width: 40%" id="to-time" placeholder="Time" type="text" class="timepicker">
                     </div>
                     <div class="input-field col s12" style="width: 30%">
-                        <input id="sample-rate" type="text" class="validate">
+                        <input id="sample-rate" type="text" class="validate" value="0.5">
                         <label for="sample-rate">Sample Rate</label>
                     </div>
                     <div class="col s12">
-                        <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+                        <button id="submit-query" class="btn waves-effect waves-light" type="submit" name="action">Submit
                             <i class="material-icons right">send</i>
                         </button>
                     <div>
@@ -46,11 +46,22 @@
     <div style="padding-bottom: 20px">
         <canvas id="chart" height="200"></canvas>
     </div>
+    <div id="alert-modal" class="modal">
+        <div class="modal-content">
+            <h4>Malformat Data</h4>
+            <p id="alert-text">Please check your input :D</p>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-green btn-flat">OK</a>
+        </div>
+    </div>
     <script type="text/javascript">
+        // Plugin initializations
         $('.collapsible').collapsible();
         $('select').formSelect();
         $('.datepicker').datepicker();
         $('.timepicker').timepicker();
+        $('.modal').modal();
         var ctx = document.getElementById("chart").getContext('2d');
         // Following codes are from chartjs documentation.
         var myChart = new Chart(ctx, {
@@ -89,5 +100,50 @@
                 }
             }
         });
+        $("#submit-query").on("click", function() {
+            var topic_select = document.getElementById('topic-select')
+            var alert_text = document.getElementById('alert-text')
+            var from_time = document.getElementById('from-time')
+            var from_date = document.getElementById('from-date')
+            var to_time = document.getElementById('to-time')
+            var to_date = document.getElementById('to-date')
+            var sample_rate = parseFloat(document.getElementById('sample-rate').value)
+            if (topic_select.selectedIndex === 0) {
+                alert_text.innerText = 'Please select a Topic'
+                $('#alert-modal').modal('open')
+            } else if (from_date.value === '' || to_date.value === '') {
+                alert_text.innerText = 'Please enter the dates'
+                $('#alert-modal').modal('open')
+            } else if (from_time.value === '' || to_time.value === '') {
+                alert_text.innerText = 'Please enter the times'
+                $('#alert-modal').modal('open')
+            } else if (isNaN(sample_rate) || sample_rate < 0.0 || sample_rate > 1.0) {
+                alert_text.innerText = 'Sample rate should be in (0.0, 1.0)'
+                $('#alert-modal').modal('open')
+            } else {
+                $('.collapsible').collapsible('close')
+                M.toast({html: 'Fetching Data...', classes: 'rounded'})
+                var post_data = {
+                    topic: topic_select.options[topic_select.selectedIndex].text,
+                    time_start: {
+                        time: from_time.value,
+                        date: from_date.value
+                    },
+                    time_end: {
+                        time: to_time.value,
+                        date: to_date.value
+                    },
+                    sample_rate: sample_rate
+                }
+                $.post('/query', post_data, function (data, status) {
+                    if (data.status === 'success') {
+                        M.Toast.dismissAll();
+                        M.toast({html: 'Success!', classes: 'rounded'})
+                    } else {
+                        M.toast({html: 'Error while fetching data', classes: 'rounded'})
+                    }
+                })
+            }
+        })
     </script>
 </div>
