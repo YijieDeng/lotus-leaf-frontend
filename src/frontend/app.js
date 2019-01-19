@@ -37,6 +37,33 @@ app.use(async (ctx, next) => {
 // routes
 app.use(index.routes(), index.allowedMethods())
 
+// error page
+app.use(async (ctx, next) => {
+  try {
+    await next();
+    if (ctx.status === 404) {
+      ctx.throw(404);
+    }
+  } catch (err) {
+    let dict_render = {}
+    console.error(err.stack);
+    const status = err.status || 500;
+    dict_render.error_code = err.status
+    ctx.status = status;
+    if (status === 404) {
+      dict_render.title = "404 NOT FOUND"
+      dict_render.message = 'Ahh...Nothing found here...';
+    } else if (status === 500) {
+      dict_render.title = "500 Internal Error"
+      dict_render.message = 'Internal Error? No way!';
+    } else if (status === 403) {
+      dict_render.title = "403 Forbidden"
+      dict_render.message = '[立入禁止] No Entry Here';
+    }
+    await ctx.render("error", dict_render);
+  }
+})
+
 // error-handling
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
