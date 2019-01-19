@@ -8,7 +8,7 @@ const logger = require('koa-logger')
 
 const index = require('./routes/index')
 
-global.config = require('./config')
+global.config = require('./.config')
 global.sequelize = require('sequelize')
 
 // error handler
