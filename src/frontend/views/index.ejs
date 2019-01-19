@@ -136,11 +136,10 @@
                     sample_rate: sample_rate
                 }
                 $.post('/query', post_data, function (data, status) {
-                    if (data.status === 'success') {
-                        M.Toast.dismissAll();
-                        M.toast({html: 'Success!', classes: 'rounded'})
-                    } else {
-                        M.toast({html: 'Error while fetching data', classes: 'rounded'})
+                    M.Toast.dismissAll();
+                    M.toast({html: data.message, classes: 'rounded'})
+                    if (data.status == 'error') {
+                        $('.collapsible').collapsible('open')
                     }
                 })
             }
