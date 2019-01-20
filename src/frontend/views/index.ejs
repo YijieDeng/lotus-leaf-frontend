@@ -121,7 +121,6 @@
                 alert_text.innerText = 'Sample rate should be in (0.0, 1.0)'
                 $('#alert-modal').modal('open')
             } else {
-                $('.collapsible').collapsible('close')
                 M.toast({html: 'Fetching Data...', classes: 'rounded'})
                 var post_data = {
                     topic: topic_select.options[topic_select.selectedIndex].text,
@@ -138,8 +137,8 @@
                 $.post('/query', post_data, function (data, status) {
                     M.Toast.dismissAll();
                     M.toast({html: data.message, classes: 'rounded'})
-                    if (data.status == 'error') {
-                        $('.collapsible').collapsible('open')
+                    if (data.status !== 'error') {
+                        $('.collapsible').collapsible('close')
                     }
                 })
             }
