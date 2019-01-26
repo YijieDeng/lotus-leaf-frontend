@@ -7,12 +7,17 @@
             <div class="container">
                 <div class="row">
                     <div class="input-field col s12" style="width: 60%">
-                        <select id="topic-select">
-                            <option value="" disabled selected>Select a Topic</option>
-                            <option value="1">UW/Mercer</option>
-                            <option value="2">UW/Alder</option>
-                            <option value="3">UW/Solar</option>
-                        </select>
+                        <select multiple id="topic-select">
+                            <% let topics_prefix = Object.keys(topics) %>
+                            <% for (let i = 0; i < topics_prefix.length; ++i) { %>
+                                <% let terminations = topics[topics_prefix[i]] %>
+                                <optgroup label="<%= topics_prefix[i] %>">
+                                    <% for (let j = 0; j < terminations.length; ++j) { %>
+                                        <option value="<%= terminations[j] %>"><%= terminations[j] %></option>
+                                    <% } %>
+                                </optgroup>
+                            <% } %>
+                        </select multiple>
                         <label>Select a Topic</label>
                     </div>
                     <div class="col s12"><label> From </label></div>
@@ -110,7 +115,7 @@
             var to_time = document.getElementById('to-time')
             var to_date = document.getElementById('to-date')
             var sample_rate = parseFloat(document.getElementById('sample-rate').value)
-            if (topic_select.selectedIndex === 0) {
+            if (topic_select.innerText === '') {
                 alert_text.innerText = 'Please select a Topic'
                 $('#alert-modal').modal('open')
             } else if (from_date.value === '' || to_date.value === '') {

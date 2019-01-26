@@ -87,6 +87,12 @@ global.db = {
     require('./models/volttron_table_definitions')
     global.Promise = Sequlize.Promise
     await this.instance.sync()
+  },
+  load_model(model_name) {
+    return require(`./models/${model_name}`)
+  },
+  load_snap(snap_name) {
+    return require(`./snaps/${snap_name}`)
   }
 }
 
