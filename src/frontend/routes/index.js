@@ -103,17 +103,18 @@ function render_chart(data, chart_style, sampling_rate) {
         if (typeof i === 'undefined') break
         if (data[i].length === 0) continue;
         let data_arr = data[i]
-        let current_data = {label: i, fill: chart_style === 'bubble' || chart_style === 'bar', borderColor: random_color(0.7), data: []}
+        let current_data = {label: i, fill: chart_style === 'bubble' || chart_style === 'bar', data: []}
         if (current_data.fill) {
+            current_data.backgroundColor = random_color(0.3)
+            current_data.borderColor = remove_alpha(current_data.backgroundColor)
             if (chart_style === 'bubble') {
                 current_data.radius = 6
                 current_data.hoverRadius = 8
-                current_data.backgroundColor = current_data.borderColor
             } else if (chart_style === 'bar') {
-                current_data.backgroundColor = random_color(0.3)
-                current_data.borderColor = remove_alpha(current_data.backgroundColor)
                 current_data.borderWidth = 1.0
             }
+        } else {
+           current_data.borderColor = random_color(0.7)
         }
         for (let j = 0; j < data_arr.length; ++j) {
             let current_date = new Date(data_arr[j].ts)
