@@ -137,18 +137,16 @@ function render_chart(data, chart_style, sampling_rate) {
         x_unit = 'quarter'
     else if (date_diff > get_ms_by_day(30 * sampling_rate))
         x_unit = 'month'
-    else if (date_diff > get_ms_by_day(14 * sampling_rate))
+    else if (date_diff > get_ms_by_day(7 * sampling_rate))
         x_unit = 'week'
-    else if (date_diff > get_ms_by_day(3 * sampling_rate))
+    else if (date_diff > get_ms_by_day(2 * sampling_rate))
         x_unit = 'day'
-    else if (date_diff > get_ms_by_day(1 / 2 * sampling_rate))
+    else if (date_diff > get_ms_by_day(1 / 24 * sampling_rate))
         x_unit = 'hour'
-    else if (date_diff > get_ms_by_day(30 / (24 * 60) * sampling_rate))
+    else if (date_diff > get_ms_by_day(1 / (24 * 60) * sampling_rate))
         x_unit = 'minute'
-    else if (date_diff > get_ms_by_day(30 / (24 * 3600) * sampling_rate))
-        x_unit = 'second'
     else
-        x_unit = 'millisecond'
+        x_unit = 'second'
 
     console.log(x_unit)
 
@@ -166,7 +164,7 @@ function render_chart(data, chart_style, sampling_rate) {
                                         unit: '${x_unit}',
                                         unitStepSize: 1,
                                         displayFormats: {
-                                            'millisecond': 'MMM DD',
+                                            'millisecond': '',
                                             'second': 'MMM DD',
                                             'minute': 'MMM DD',
                                             'hour': 'MMM DD',
@@ -252,7 +250,8 @@ router.post('/query', async (ctx, next) => {
             if (typeof each !== 'undefined') {
                 data_list[each] = (await DataSnap.get_data_by_tid(topic_id_map[each], {
                     ts: {
-                        $between: [datetime_start, datetime_end]
+                        [Op.lt]: datetime_end,
+                        [Op.gt]: datetime_start
                     }
                 }))
                 item_count += data_list[each].length
