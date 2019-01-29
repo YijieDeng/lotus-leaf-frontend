@@ -91,8 +91,8 @@ function render_chart(data, chart_style, sampling_rate) {
     }
 
     if (!proceed) {
-        // Set line as default style
-        chart_style = 'line'
+        // Set Scatter as default style
+        chart_style = 'scatter'
     }
     const remove_alpha = (color_str) => {
         return color_str.replace('rgba', 'rgb').split(',').reverse().slice(1).reverse().join() + ')'
