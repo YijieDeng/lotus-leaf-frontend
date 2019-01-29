@@ -58,13 +58,13 @@ function construct_names(dict, name_prefix) {
 /**
  * Generate random color written in a String
  *
- * @returns {string} the random color represented by call of rgb function
+ * @returns {string} the random color represented by call of rgba function
  */
-function random_color() {
+function random_color(alpha=1.0) {
     let rand_num = () => {
         return Math.floor(Math.random() * 256)
     }
-    return `rgb(${rand_num()}, ${rand_num()}, ${rand_num()})`
+    return `rgba(${rand_num()}, ${rand_num()}, ${rand_num()}, ${alpha})`
 }
 
 function get_ms_by_day(num_of_days) {
@@ -75,7 +75,7 @@ function get_ms_by_day(num_of_days) {
  * Return the javascript code used to render the chart
  * This operation is not pure thus the string returned should be guaranteed
  * that it does not contain malicious code
- *  TODO: considering to construct bar charts
+ *  TODO: considering to construct bar charts | fix time issue
  *
  * @returns {string} the code for rendering chartjs
  */
@@ -94,29 +94,40 @@ function render_chart(data, chart_style, sampling_rate) {
         // Set line as default style
         chart_style = 'line'
     }
-    let min_date = new Date()
+    const remove_alpha = (color_str) => {
+        return color_str.replace('rgba', 'rgb').split(',').reverse().slice(1).reverse().join() + ')'
+    }
+    let min_date = null
     let max_date = new Date(0)
     for (let i in data) {
         if (typeof i === 'undefined') break
         if (data[i].length === 0) continue;
         let data_arr = data[i]
-        let current_data = {label: i, fill: chart_style === 'bubble', borderColor: random_color(), data: []}
+        let current_data = {label: i, fill: chart_style === 'bubble' || chart_style === 'bar', borderColor: random_color(0.7), data: []}
         if (current_data.fill) {
-            current_data.backgroundColor = current_data.borderColor
-            current_data.radius = 6
-            current_data.hoverRadius = 8
+            if (chart_style === 'bubble') {
+                current_data.radius = 6
+                current_data.hoverRadius = 8
+                current_data.backgroundColor = current_data.borderColor
+            } else if (chart_style === 'bar') {
+                current_data.backgroundColor = random_color(0.3)
+                current_data.borderColor = remove_alpha(current_data.backgroundColor)
+                current_data.borderWidth = 1.0
+            }
         }
         for (let j = 0; j < data_arr.length; ++j) {
             let current_date = new Date(data_arr[j].ts)
             if (current_date > max_date)
                 max_date = current_date
-            if (current_date < min_date)
+            if (min_date === null || current_date < min_date)
                 min_date = current_date
             current_data.data.push({x: data_arr[j].ts.toString(), y: parseFloat(data_arr[j].value_string)})
         }
         datasets.push(current_data)
     }
     let date_diff = max_date - min_date
+
+    console.log(`${max_date} ${min_date}`)
 
     let x_unit = ''
     if (date_diff > get_ms_by_day(2 * 365 * sampling_rate))
@@ -138,6 +149,8 @@ function render_chart(data, chart_style, sampling_rate) {
     else
         x_unit = 'millisecond'
 
+    console.log(x_unit)
+
     return `new Chart(ctx, {
                     type: '${chart_style}',
                     data: {
@@ -150,6 +163,7 @@ function render_chart(data, chart_style, sampling_rate) {
                                     type: 'time',
                                     time: {
                                         unit: '${x_unit}',
+                                        unitStepSize: 1,
                                         displayFormats: {
                                             'millisecond': 'MMM DD',
                                             'second': 'MMM DD',
