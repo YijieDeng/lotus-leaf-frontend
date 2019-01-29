@@ -13,7 +13,11 @@
                                 <% let terminations = topics[topics_prefix[i]] %>
                                 <optgroup label="<%= topics_prefix[i] %>">
                                     <% for (let j = 0; j < terminations.length; ++j) { %>
-                                        <option value="<%= terminations[j] %>"><%= terminations[j] %></option>
+                                        <% if (topics_prefix[i] === terminations[j]) { %>
+                                            <option value="<%= terminations[j] %>"><%= terminations[j] %></option>
+                                        <% } else { %>
+                                            <option value="<%= topics_prefix[i] + '/' + terminations[j] %>"><%= terminations[j] %></option>
+                                        <% } %>
                                     <% } %>
                                 </optgroup>
                             <% } %>
@@ -34,9 +38,20 @@
                     <div class="col s8">
                         <input style="width: 40%" id="to-time" placeholder="Time" type="text" class="timepicker">
                     </div>
-                    <div class="input-field col s12" style="width: 30%">
-                        <input id="sample-rate" type="text" class="validate" value="0.5">
-                        <label for="sample-rate">Sample Rate</label>
+                    <div class="col s12">
+                        <div class="input-field col s6" style="width: 30%">
+                            <input id="sample-rate" type="text" class="validate" value="1.0">
+                            <label for="sample-rate">Sample Rate</label>
+                        </div>
+                        <div class="input-field col s6" style="width: 30%">
+                            <select id="chart-style-select">
+                                <option value="line">Line</option>
+                                <option value="scatter">Scatter</option>
+                                <option value="bar">Bar</option>
+                                <option value="bubble">Bubble</option>
+                            </select>
+                            <label for="chart-style-select">Chart Style</label>
+                        </div>
                     </div>
                     <div class="col s12">
                         <button id="submit-query" class="btn waves-effect waves-light" type="submit" name="action">Submit
@@ -57,7 +72,7 @@
             <p id="alert-text">Please check your input :D</p>
         </div>
         <div class="modal-footer">
-            <a href="#!" class="modal-close waves-effect waves-green btn-flat">OK</a>
+            <a href="#" class="modal-close waves-effect waves-green btn-flat">OK</a>
         </div>
     </div>
     <script type="text/javascript">
@@ -68,54 +83,19 @@
         $('.timepicker').timepicker();
         $('.modal').modal();
         var ctx = document.getElementById("chart").getContext('2d');
-        // Following codes are from chartjs documentation.
-        var myChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-                datasets: [{
-                    label: '# of Votes',
-                    data: [12, 19, 3, 5, 2, 3],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255,99,132,1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero:true
-                        }
-                    }]
-                }
-            }
-        });
+        var canvas = document.getElementById("chart")
         // Post data to middle-end and present error message or plot
         // the data given by the backend.
+        window.chart = new Chart(ctx, {});
         $("#submit-query").on("click", function() {
-            var topic_select = document.getElementById('topic-select')
-            var alert_text = document.getElementById('alert-text')
-            var from_time = document.getElementById('from-time')
-            var from_date = document.getElementById('from-date')
-            var to_time = document.getElementById('to-time')
-            var to_date = document.getElementById('to-date')
-            var sample_rate = parseFloat(document.getElementById('sample-rate').value)
-            if (topic_select.innerText === '') {
+            let topic_select = $('#topic-select').val()
+            let alert_text = document.getElementById('alert-text')
+            let from_time = document.getElementById('from-time')
+            let from_date = document.getElementById('from-date')
+            let to_time = document.getElementById('to-time')
+            let to_date = document.getElementById('to-date')
+            let sample_rate = parseFloat(document.getElementById('sample-rate').value)
+            if (topic_select.length === 0) {
                 alert_text.innerText = 'Please select a Topic'
                 $('#alert-modal').modal('open')
             } else if (from_date.value === '' || to_date.value === '') {
@@ -129,8 +109,8 @@
                 $('#alert-modal').modal('open')
             } else {
                 M.toast({html: 'Fetching Data...', classes: 'rounded'})
-                var post_data = {
-                    topic: topic_select.options[topic_select.selectedIndex].text,
+                let post_data = {
+                    topic: topic_select,
                     time_start: {
                         time: from_time.value,
                         date: from_date.value
@@ -139,13 +119,17 @@
                         time: to_time.value,
                         date: to_date.value
                     },
-                    sample_rate: sample_rate
+                    sample_rate: sample_rate ,
+                    chart_style: $('#chart-style-select').val()
                 }
                 $.post('/query', post_data, function (data, status) {
                     M.Toast.dismissAll();
                     M.toast({html: data.message, classes: 'rounded'})
                     if (data.status !== 'error') {
                         $('.collapsible').collapsible('close')
+                        // Clear the canvas first
+                        window.chart.destroy()
+                        window.chart = eval(data.chart)
                     }
                 })
             }

@@ -1,4 +1,8 @@
 const router = require('koa-router')()
+const TopicSnap = global.db.load_snap('topic_snap')
+const MetaSnap = global.db.load_snap('meta_snap')
+const DataSnap = global.db.load_snap('data_snap')
+const Op = (require('sequelize')).Op
 
 /**
  * Insert the solar panel information into a name tree (word trie tree).
@@ -51,9 +55,121 @@ function construct_names(dict, name_prefix) {
     }
 }
 
+/**
+ * Generate random color written in a String
+ *
+ * @returns {string} the random color represented by call of rgb function
+ */
+function random_color() {
+    let rand_num = () => {
+        return Math.floor(Math.random() * 256)
+    }
+    return `rgb(${rand_num()}, ${rand_num()}, ${rand_num()})`
+}
+
+function get_ms_by_day(num_of_days) {
+    return num_of_days * 24 * 60 * 60 * 1000
+}
+
+/**
+ * Return the javascript code used to render the chart
+ * This operation is not pure thus the string returned should be guaranteed
+ * that it does not contain malicious code
+ *  TODO: considering to construct bar charts
+ *
+ * @returns {string} the code for rendering chartjs
+ */
+function render_chart(data, chart_style, sampling_rate) {
+    const allowed_styles = ['line', 'scatter', 'bubble', 'bar']
+    let proceed = false;
+    let datasets = []
+
+    for (let i in allowed_styles) {
+        if (chart_style === allowed_styles[i]) {
+            proceed = true;
+        }
+    }
+
+    if (!proceed) {
+        // Set line as default style
+        chart_style = 'line'
+    }
+    let min_date = new Date()
+    let max_date = new Date(0)
+    for (let i in data) {
+        if (typeof i === 'undefined') break
+        if (data[i].length === 0) continue;
+        let data_arr = data[i]
+        let current_data = {label: i, fill: chart_style === 'bubble', borderColor: random_color(), data: []}
+        if (current_data.fill) {
+            current_data.backgroundColor = current_data.borderColor
+            current_data.radius = 6
+            current_data.hoverRadius = 8
+        }
+        for (let j = 0; j < data_arr.length; ++j) {
+            let current_date = new Date(data_arr[j].ts)
+            if (current_date > max_date)
+                max_date = current_date
+            if (current_date < min_date)
+                min_date = current_date
+            current_data.data.push({x: data_arr[j].ts.toString(), y: parseFloat(data_arr[j].value_string)})
+        }
+        datasets.push(current_data)
+    }
+    let date_diff = max_date - min_date
+
+    let x_unit = ''
+    if (date_diff > get_ms_by_day(2 * 365 * sampling_rate))
+        x_unit = 'year'
+    else if (date_diff > get_ms_by_day(90 * sampling_rate))
+        x_unit = 'quarter'
+    else if (date_diff > get_ms_by_day(30 * sampling_rate))
+        x_unit = 'month'
+    else if (date_diff > get_ms_by_day(14 * sampling_rate))
+        x_unit = 'week'
+    else if (date_diff > get_ms_by_day(3 * sampling_rate))
+        x_unit = 'day'
+    else if (date_diff > get_ms_by_day(1 / 2 * sampling_rate))
+        x_unit = 'hour'
+    else if (date_diff > get_ms_by_day(30 / (24 * 60) * sampling_rate))
+        x_unit = 'minute'
+    else if (date_diff > get_ms_by_day(30 / (24 * 3600) * sampling_rate))
+        x_unit = 'second'
+    else
+        x_unit = 'millisecond'
+
+    return `new Chart(ctx, {
+                    type: '${chart_style}',
+                    data: {
+                        datasets: ${JSON.stringify(datasets)}, 
+                    }, 
+                    options: {
+                        scales: {
+                            xAxes: [
+                                {
+                                    type: 'time',
+                                    time: {
+                                        unit: '${x_unit}',
+                                        displayFormats: {
+                                            'millisecond': 'MMM DD',
+                                            'second': 'MMM DD',
+                                            'minute': 'MMM DD',
+                                            'hour': 'MMM DD',
+                                            'day': 'MMM DD',
+                                            'week': 'MMM DD',
+                                            'month': 'MMM DD',
+                                            'quarter': 'MMM DD',
+                                            'year': 'MMM DD',
+                                        }
+                                    }
+                                }]
+                        }
+                    }
+                })`
+}
+
 router.get('/', async (ctx, next) => {
-    const topic_snap = global.db.load_snap('topic_snap')
-    const topic_names = await topic_snap.find_all()
+    const topic_names = await TopicSnap.find_all()
     let dict_render = {}
     let name_tree = {}
     for (i = 0; i < topic_names.length; ++i) {
@@ -79,7 +195,6 @@ router.get('/', async (ctx, next) => {
  *       the chart.
  */
 router.post('/query', async (ctx, next) => {
-    const CURRENT_TIME = new Date()
     let params = ctx.request.body
     let topic = params.topic
     let date_start = params.time_start.date
@@ -88,24 +203,55 @@ router.post('/query', async (ctx, next) => {
     let time_end = params.time_end.time
     let sample_rate = params.sample_rate
 
-    console.log(topic)
-
     const datetime_start = new Date(`${date_start} ${time_start}`)
     const datetime_end = new Date(`${date_end} ${time_end}`)
 
-    if (datetime_end > CURRENT_TIME || datetime_start > CURRENT_TIME) {
-        ctx.body = {
-            status: 'error',
-            message: 'Error: Time start / Time end is the future'
-        }
-    } else if (datetime_start > datetime_end) {
+    // Validate parameters passed to middle-end
+    if (datetime_start > datetime_end) {
         ctx.body = {
             status: 'error',
             message: 'Error: Time end is before time start'
         }
     } else {
-        ctx.body = {
-            status: 'success', message: 'Success!'
+        // Get topic id and make into a map from names to ids
+        topic.sort((x, y) => {
+            return x.length - y.length
+        })
+
+        let name_set = new Set()
+        let topic_id_map = {}
+
+        for (let i = 0; i < topic.length; ++i) {
+            if (!name_set.has(topic[i])) {
+                let similar_names = (await TopicSnap.get_by_name_like(topic[i]))
+                for (let j = 0; j < similar_names.length; ++j) {
+                    name_set.add(similar_names[j].topic_name)
+                    topic_id_map[similar_names[j].topic_name] = similar_names[j].topic_id
+                }
+            }
+        }
+
+        let data_list = []
+        let item_count = 0
+        for (let each in topic_id_map) {
+            if (typeof each !== 'undefined') {
+                data_list[each] = (await DataSnap.get_data_by_tid(topic_id_map[each], {
+                    ts: {
+                        $between: [datetime_start, datetime_end]
+                    }
+                }))
+                item_count += data_list[each].length
+            }
+        }
+
+        if (item_count === 0) {
+            ctx.body = {
+                status: 'error', message: 'No data to display'
+            }
+        } else {
+            ctx.body = {
+                status: 'success', message: 'Success!', chart: render_chart(data_list, params.chart_style, sample_rate)
+            }
         }
     }
 })
