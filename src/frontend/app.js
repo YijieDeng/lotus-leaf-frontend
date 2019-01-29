@@ -6,10 +6,47 @@ const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 
-const index = require('./routes/index')
 
+// Global Vars
 global.config = require('./.config')
 global.sequelize = require('sequelize')
+global.Op = global.sequelize.Op
+global.db = {
+  log(msg) {
+    console.log(`[DB_LOG] ${msg}`)
+  },
+  instance : null,
+  async connectDatabase() {
+    const Sequlize = require('sequelize')
+    this.instance = new Sequlize(global.config.db.name, global.config.db.username, global.config.db.password, {
+      host : global.config.db.host,
+      dialect : global.config.db.dialect,
+      logging : global.config.mode === 'dev' ? this.log : null
+    })
+    require('./models/data')
+    require('./models/meta')
+    require('./models/topics')
+    require('./models/volttron_table_definitions')
+    global.Promise = Sequlize.Promise
+    await this.instance.sync()
+  },
+  load_model(model_name) {
+    return require(`./models/${model_name}`)
+  },
+  load_snap(snap_name) {
+    return require(`./snaps/${snap_name}`)
+  }
+}
+
+global.log = (msg) => {
+  if (global.config.mode === 'dev')
+    console.log(`[Manual Log] => ${msg}`)
+}
+
+global.db.connectDatabase()
+
+// Load Routers
+const index = require('./routes/index')
 
 // error handler
 onerror(app)
@@ -68,35 +105,6 @@ app.use(async (ctx, next) => {
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
 });
-
-global.db = {
-  log(msg) {
-    console.log(`[DB_LOG] ${msg}`)
-  },
-  instance : null,
-  async connectDatabase() {
-    const Sequlize = require('sequelize')
-    this.instance = new Sequlize(global.config.db.name, global.config.db.username, global.config.db.password, {
-      host : global.config.db.host, 
-      dialect : global.config.db.dialect, 
-      logging : global.config.mode === 'dev' ? this.log : null
-    })
-    require('./models/data')
-    require('./models/meta')
-    require('./models/topics')
-    require('./models/volttron_table_definitions')
-    global.Promise = Sequlize.Promise
-    await this.instance.sync()
-  },
-  load_model(model_name) {
-    return require(`./models/${model_name}`)
-  },
-  load_snap(snap_name) {
-    return require(`./snaps/${snap_name}`)
-  }
-}
-
-global.db.connectDatabase()
 app.listen(global.config.port)
 
 module.exports = app
