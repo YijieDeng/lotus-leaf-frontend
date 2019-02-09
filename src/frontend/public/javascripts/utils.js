@@ -9,6 +9,9 @@ var canvas = document.getElementById("chart")
 // Post data to middle-end and present error message or plot
 // the data given by the backend.
 window.chart = new Chart(ctx, {});
+$("#show-stat").on("click", function() {
+    $('#stat-modal').modal('open')
+})
 $("#submit-query").on("click", function() {
     let topic_select = $('#topic-select').val()
     let alert_text = document.getElementById('alert-text')
@@ -31,6 +34,7 @@ $("#submit-query").on("click", function() {
         $('#alert-modal').modal('open')
     } else {
         M.toast({html: 'Fetching Data...', classes: 'rounded'})
+        $('#pre-loader').css('visibility', 'visible')
         let post_data = {
             topic: topic_select,
             time_start: {
@@ -47,11 +51,21 @@ $("#submit-query").on("click", function() {
         $.post('/query', post_data, function (data, status) {
             M.Toast.dismissAll();
             M.toast({html: data.message, classes: 'rounded'})
+            $('#pre-loader').hide()
+            if (data.enable_stat) {
+                $('#show-stat').css('visibility', 'visible')
+            }
             if (data.status !== 'error') {
                 $('.collapsible').collapsible('close')
+                $('#chart-wrapper').css('visibility', 'visible')
                 // Clear the canvas first
                 window.chart.destroy()
                 window.chart = eval(data.chart)
+                if ($('#stat-collapsible')) {
+                    $('#stat-collapsible').remove()
+                }
+                $('#stat-content-wrapper').prepend(data.stat_content)
+                $('#stat-collapsible').collapsible()
             }
         })
     }

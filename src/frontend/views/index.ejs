@@ -14,7 +14,7 @@
                                 <optgroup label="<%= topics_prefix[i] %>">
                                     <% for (let j = 0; j < terminations.length; ++j) { %>
                                         <% if (topics_prefix[i] === terminations[j]) { %>
-                                            <option value="<%= terminations[j] %>"><%= terminations[j] %></option>
+                                            <option value="<%= terminations[j] %>">All topics (<%= terminations[j] %>)</option>
                                         <% } else { %>
                                             <option value="<%= topics_prefix[i] + '/' + terminations[j] %>"><%= terminations[j] %></option>
                                         <% } %>
@@ -63,16 +63,43 @@
         </div>
         </li>
     </ul>
-    <div style="padding-bottom: 20px">
+    <div id="pre-loader" align="center" style="visibility: hidden">
+        <div class="preloader-wrapper big active">
+            <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left">
+                    <div class="circle"></div>
+                </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="chart-wrapper" style="visibility: hidden">
         <canvas id="chart" height="200"></canvas>
+    </div>
+    <div id="show-stat" style="padding-bottom: 20px; visibility: hidden" align="center">
+        <a class="waves-effect waves-light btn-small"><i class="material-icons left">show_chart</i>Show Statistic</a>
     </div>
     <div id="alert-modal" class="modal">
         <div class="modal-content">
-            <h4>Malformat Data</h4>
+            <h4 class="header">Malformat Data</h4>
             <p id="alert-text">Please check your input :D</p>
         </div>
         <div class="modal-footer">
-            <a href="#" class="modal-close waves-effect waves-green btn-flat">OK</a>
+            <a href="#" class="modal-close waves-effect waves-teal btn-flat">OK</a>
+        </div>
+    </div>
+    <div id="stat-modal" class="modal bottom-sheet">
+        <div class="modal-content">
+            <h4 class="header" style="color: rebeccapurple">Statistic</h4>
+            <div id="stat-content-wrapper" align="center">
+
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="modal-close waves-effect waves-purple btn-flat">Dismiss</a>
         </div>
     </div>
     <script type="text/javascript" src="javascripts/utils.js"> </script>

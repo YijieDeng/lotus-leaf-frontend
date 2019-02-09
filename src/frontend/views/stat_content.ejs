@@ -1,0 +1,29 @@
+<% if (stat_data) { %>
+                <ul id="stat-collapsible" class="collapsible">
+                    <% let stat_topics = Object.keys(stat_data) %>
+                    <% for (let i = 0;i < stat_topics.length; ++i) { %>
+                        <li>
+                            <div class="collapsible-header"><%= stat_topics[i]%></div>
+                            <div class="collapsible-body">
+                                <table class="responsive-table centered">
+                                    <thead>
+                                    <tr>
+                                        <% let stats = Object.keys(stat_data[stat_topics[i]]) %>
+                                        <% for (let j = 0; j < stats.length; ++j) { %>
+                                            <th><%= stats[j] %></th>
+                                        <% } %>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                        <% for (let j = 0; j < stats.length; ++j) { %>
+                                                <td><%= stat_data[stat_topics[i]][stats[j]] %></td>
+                                        <% } %>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </li>
+                    <% } %>
+                </ul>
+                <% } %>

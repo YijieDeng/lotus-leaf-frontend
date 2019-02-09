@@ -3,6 +3,8 @@ const TopicSnap = global.db.load_snap('topic_snap')
 const MetaSnap = global.db.load_snap('meta_snap')
 const DataSnap = global.db.load_snap('data_snap')
 const Op = (require('sequelize')).Op
+const ejs = require('ejs')
+const fs = require('fs')
 
 /**
  * Insert the solar panel information into a name tree (word trie tree).
@@ -116,7 +118,9 @@ function render_chart(data, chart_style, sampling_rate) {
         } else {
            current_data.borderColor = random_color(0.7)
         }
-        for (let j = 0; j < data_arr.length; ++j) {
+        let num_of_data = data_arr.length * sampling_rate
+        let step = data_arr.length / num_of_data
+        for (let j = 0; j < data_arr.length; j += step) {
             let current_date = new Date(data_arr[j].ts)
             if (current_date > max_date)
                 max_date = current_date
@@ -179,6 +183,37 @@ function render_chart(data, chart_style, sampling_rate) {
                         }
                     }
                 })`
+}
+
+function calculate_stat(data, sampling_rate) {
+    let stat_dict = {}
+    for (let i in data) {
+        if (typeof i === 'undefined') break
+        if (data[i].length === 0) continue;
+        let data_arr = data[i]
+        stat_dict[i] ={}
+        let min_value = Number.MAX_SAFE_INTEGER
+        let max_value = Number.MIN_SAFE_INTEGER
+        let sum = 0.0
+        let num_of_data = data_arr.length * sampling_rate
+        let step = data_arr.length / num_of_data
+        num_of_data = 0
+        for (let j = 0; j < data_arr.length; j += step) {
+            let point_data = parseFloat(data_arr[j].value_string)
+            sum += point_data
+            min_value = Math.min(min_value, point_data)
+            max_value = Math.max(max_value, point_data)
+            num_of_data += 1
+        }
+        stat_dict[i].max = max_value
+        stat_dict[i].min = min_value
+        if (num_of_data !== 0)
+            stat_dict[i].mean = sum / num_of_data
+        else
+            stat_dict[i].mean = 'NaN'
+        stat_dict[i].range = max_value - min_value
+    }
+    return stat_dict
 }
 
 router.get('/', async (ctx, next) => {
@@ -263,8 +298,14 @@ router.post('/query', async (ctx, next) => {
                 status: 'error', message: 'No data to display'
             }
         } else {
+            const path = require('path')
+            const stat_content_template = fs.readFileSync(path.join('views', 'stat_content.ejs'), 'utf-8')
             ctx.body = {
-                status: 'success', message: 'Success!', chart: render_chart(data_list, params.chart_style, sample_rate)
+                status: 'success',
+                message: 'Success!',
+                chart: render_chart(data_list, params.chart_style, sample_rate),
+                stat_content: ejs.render(stat_content_template, {stat_data: calculate_stat(data_list, sample_rate)}),
+                enable_stat: true
             }
         }
     }
