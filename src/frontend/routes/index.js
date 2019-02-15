@@ -253,7 +253,6 @@ router.post('/query', async (ctx, next) => {
 
     const datetime_start = new Date(`${date_start} ${time_start}`)
     const datetime_end = new Date(`${date_end} ${time_end}`)
-
     // Validate parameters passed to middle-end
     if (datetime_start > datetime_end) {
         ctx.body = {
@@ -285,8 +284,8 @@ router.post('/query', async (ctx, next) => {
             if (typeof each !== 'undefined') {
                 data_list[each] = (await DataSnap.get_data_by_tid(topic_id_map[each], {
                     ts: {
-                        [Op.lt]: datetime_end,
-                        [Op.gt]: datetime_start
+                        [Op.lt]: `${datetime_end.toLocaleDateString()} ${datetime_end.toLocaleTimeString()}`,
+                        [Op.gt]: `${datetime_start.toLocaleDateString()} ${datetime_start.toLocaleTimeString()}`
                     }
                 }))
                 item_count += data_list[each].length

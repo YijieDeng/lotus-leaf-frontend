@@ -8,39 +8,44 @@ const logger = require('koa-logger')
 
 
 // Global Vars
+global.formatTime = (time) => {
+    let date = new Date(time)
+    let offset = -(new Date().getTimezoneOffset() / 60)
+    return new Date(date.getTime() + offset)
+}
 global.config = require('./.config')
 global.sequelize = require('sequelize')
 global.Op = global.sequelize.Op
 global.db = {
-  log(msg) {
-    console.log(`[DB_LOG] ${msg}`)
-  },
-  instance : null,
-  async connectDatabase() {
-    const Sequlize = require('sequelize')
-    this.instance = new Sequlize(global.config.db.name, global.config.db.username, global.config.db.password, {
-      host : global.config.db.host,
-      dialect : global.config.db.dialect,
-      logging : global.config.mode === 'dev' ? this.log : null
-    })
-    require('./models/data')
-    require('./models/meta')
-    require('./models/topics')
-    require('./models/volttron_table_definitions')
-    global.Promise = Sequlize.Promise
-    await this.instance.sync()
-  },
-  load_model(model_name) {
-    return require(`./models/${model_name}`)
-  },
-  load_snap(snap_name) {
-    return require(`./snaps/${snap_name}`)
-  }
+    log(msg) {
+        console.log(`[DB_LOG] ${msg}`)
+    },
+    instance : null,
+    async connectDatabase() {
+        const Sequlize = require('sequelize')
+        this.instance = new Sequlize(global.config.db.name, global.config.db.username, global.config.db.password, {
+            host : global.config.db.host,
+            dialect : global.config.db.dialect,
+            logging : global.config.mode === 'dev' ? this.log : null
+        })
+        require('./models/data')
+        require('./models/meta')
+        require('./models/topics')
+        require('./models/volttron_table_definitions')
+        global.Promise = Sequlize.Promise
+        await this.instance.sync()
+    },
+    load_model(model_name) {
+        return require(`./models/${model_name}`)
+    },
+    load_snap(snap_name) {
+        return require(`./snaps/${snap_name}`)
+    }
 }
 
 global.log = (msg) => {
-  if (global.config.mode === 'dev')
-    console.log(`[Manual Log] => ${msg}`)
+    if (global.config.mode === 'dev')
+        console.log(`[Manual Log] => ${msg}`)
 }
 
 global.db.connectDatabase()
@@ -53,22 +58,22 @@ onerror(app)
 
 // middlewares
 app.use(bodyparser({
-  enableTypes:['json', 'form', 'text']
+    enableTypes:['json', 'form', 'text']
 }))
 app.use(json())
 app.use(logger())
 app.use(require('koa-static')(__dirname + '/public'))
 
 app.use(views(__dirname + '/views', {
-  extension: 'ejs'
+    extension: 'ejs'
 }))
 
 // logger
 app.use(async (ctx, next) => {
-  const start = new Date()
-  await next()
-  const ms = new Date() - start
-  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
+    const start = new Date()
+    await next()
+    const ms = new Date() - start
+    console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
 })
 
 // routes
@@ -76,34 +81,34 @@ app.use(index.routes(), index.allowedMethods())
 
 // error page
 app.use(async (ctx, next) => {
-  try {
-    await next();
-    if (ctx.status === 404) {
-      ctx.throw(404);
+    try {
+        await next();
+        if (ctx.status === 404) {
+            ctx.throw(404);
+        }
+    } catch (err) {
+        let dict_render = {}
+        console.error(err.stack);
+        const status = err.status || 500;
+        dict_render.error_code = err.status
+        ctx.status = status;
+        if (status === 404) {
+            dict_render.title = "404 NOT FOUND"
+            dict_render.message = 'Ahh...Nothing found here...';
+        } else if (status === 500) {
+            dict_render.title = "500 Internal Error"
+            dict_render.message = 'Internal Error? No way!';
+        } else if (status === 403) {
+            dict_render.title = "403 Forbidden"
+            dict_render.message = '[立入禁止] No Entry Here';
+        }
+        await ctx.render("error", dict_render);
     }
-  } catch (err) {
-    let dict_render = {}
-    console.error(err.stack);
-    const status = err.status || 500;
-    dict_render.error_code = err.status
-    ctx.status = status;
-    if (status === 404) {
-      dict_render.title = "404 NOT FOUND"
-      dict_render.message = 'Ahh...Nothing found here...';
-    } else if (status === 500) {
-      dict_render.title = "500 Internal Error"
-      dict_render.message = 'Internal Error? No way!';
-    } else if (status === 403) {
-      dict_render.title = "403 Forbidden"
-      dict_render.message = '[立入禁止] No Entry Here';
-    }
-    await ctx.render("error", dict_render);
-  }
 })
 
 // error-handling
 app.on('error', (err, ctx) => {
-  console.error('server error', err, ctx)
+    console.error('server error', err, ctx)
 });
 app.listen(global.config.port)
 
