@@ -185,12 +185,13 @@ function render_chart(data, chart_style, sampling_rate) {
                 })`
 }
 
-function calculate_stat(data, sampling_rate) {
+async function calculate_stat(data, sampling_rate, topic_id_map) {
     let stat_dict = {}
     for (let i in data) {
         if (typeof i === 'undefined') break
         if (data[i].length === 0) continue;
         let data_arr = data[i]
+        let topic_id = topic_id_map[i]
         stat_dict[i] ={}
         let min_value = Number.MAX_SAFE_INTEGER
         let max_value = Number.MIN_SAFE_INTEGER
@@ -205,6 +206,9 @@ function calculate_stat(data, sampling_rate) {
             max_value = Math.max(max_value, point_data)
             num_of_data += 1
         }
+        let meta_info = JSON.parse((await MetaSnap.get_meta_by_tid(topic_id))[0].metadata)
+        stat_dict[i].unit = meta_info.units
+        console.log(stat_dict[i].unit)
         stat_dict[i].max = max_value
         stat_dict[i].min = min_value
         if (num_of_data !== 0)
@@ -303,7 +307,7 @@ router.post('/query', async (ctx, next) => {
                 status: 'success',
                 message: 'Success!',
                 chart: render_chart(data_list, params.chart_style, sample_rate),
-                stat_content: ejs.render(stat_content_template, {stat_data: calculate_stat(data_list, sample_rate)}),
+                stat_content: ejs.render(stat_content_template, {stat_data: await calculate_stat(data_list, sample_rate, topic_id_map)}),
                 enable_stat: true
             }
         }

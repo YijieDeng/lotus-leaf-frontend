@@ -9,9 +9,6 @@ var canvas = document.getElementById("chart")
 // Post data to middle-end and present error message or plot
 // the data given by the backend.
 window.chart = new Chart(ctx, {});
-$("#show-stat").on("click", function() {
-    $('#stat-modal').modal('open')
-})
 $("#submit-query").on("click", function() {
     let topic_select = $('#topic-select').val()
     let alert_text = document.getElementById('alert-text')
