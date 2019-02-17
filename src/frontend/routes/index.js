@@ -5,73 +5,7 @@ const DataSnap = global.db.load_snap('data_snap')
 const Op = (require('sequelize')).Op
 const ejs = require('ejs')
 const fs = require('fs')
-
-/**
- * Insert the solar panel information into a name tree (word trie tree).
- * The path is split by '/', the leaves are arrays that contains
- * the terminal destination.
- *
- * @param dict     current tree of names
- * @param name_arr the name and path information array (string split by '/')
- * @returns {*} a new object that contains updated data.
- */
-function expand_trie(dict, name_arr) {
-    if (name_arr.length === 0) return dict
-    else if (name_arr.length === 1) {
-        if (!dict.hasOwnProperty('places')) dict['places'] = []
-        dict.places.push(name_arr[0])
-    } else {
-        const hd = name_arr[0]
-        if (!dict.hasOwnProperty(hd)) dict[hd] = {}
-        expand_trie(dict[hd], name_arr.slice(1))
-        return dict;
-    }
-}
-
-/**
- * Construct the optimized name presentation according to the name tree.
- *
- * @param dict         name tree
- * @param name_prefix  the prefix of the name of the solar panel
- * @returns {{}} An object mapping common prefix to list of name terminations.
- */
-function construct_names(dict, name_prefix) {
-    if (typeof dict === 'undefined' || dict === {} || Object.keys(dict).length === 0) {
-        return {}
-    } else {
-        const keys = Object.keys(dict)
-        let name_obj = {}
-        if (keys.length === 1 && keys[0] === 'places') {
-            name_obj[name_prefix] = [name_prefix]
-            for (let i = 0; i < dict[keys[0]].length; ++i) {
-                name_obj[name_prefix].push(dict[keys[0]][i])
-            }
-        } else {
-            for (let i = 0; i < keys.length; ++i) {
-                const key = keys[i]
-                const next_level = construct_names(dict[key], name_prefix + '/' + key)
-                Object.assign(name_obj, next_level)
-            }
-        }
-        return name_obj
-    }
-}
-
-/**
- * Generate random color written in a String
- *
- * @returns {string} the random color represented by call of rgba function
- */
-function random_color(alpha=1.0) {
-    let rand_num = () => {
-        return Math.floor(Math.random() * 256)
-    }
-    return `rgba(${rand_num()}, ${rand_num()}, ${rand_num()}, ${alpha})`
-}
-
-function get_ms_by_day(num_of_days) {
-    return num_of_days * 24 * 60 * 60 * 1000
-}
+const Utils = global.db.load_snap('common_snap')
 
 /**
  * Return the javascript code used to render the chart
@@ -107,7 +41,7 @@ function render_chart(data, chart_style, sampling_rate) {
         let data_arr = data[i]
         let current_data = {label: i, fill: chart_style === 'bubble' || chart_style === 'bar', data: []}
         if (current_data.fill) {
-            current_data.backgroundColor = random_color(0.3)
+            current_data.backgroundColor = Utils.random_color(0.3)
             current_data.borderColor = remove_alpha(current_data.backgroundColor)
             if (chart_style === 'bubble') {
                 current_data.radius = 6
@@ -116,7 +50,7 @@ function render_chart(data, chart_style, sampling_rate) {
                 current_data.borderWidth = 1.0
             }
         } else {
-           current_data.borderColor = random_color(0.7)
+           current_data.borderColor = Utils.random_color(0.7)
         }
         let num_of_data = data_arr.length * sampling_rate
         let step = data_arr.length / num_of_data
@@ -132,22 +66,21 @@ function render_chart(data, chart_style, sampling_rate) {
     }
     let date_diff = max_date - min_date
 
-    console.log(`${max_date} ${min_date}`)
 
     let x_unit = ''
-    if (date_diff > get_ms_by_day(2 * 365 * sampling_rate))
+    if (date_diff > Utils.get_ms_by_day(2 * 365 * sampling_rate))
         x_unit = 'year'
-    else if (date_diff > get_ms_by_day(90 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(90 * sampling_rate))
         x_unit = 'quarter'
-    else if (date_diff > get_ms_by_day(30 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(30 * sampling_rate))
         x_unit = 'month'
-    else if (date_diff > get_ms_by_day(7 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(7 * sampling_rate))
         x_unit = 'week'
-    else if (date_diff > get_ms_by_day(2 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(2 * sampling_rate))
         x_unit = 'day'
-    else if (date_diff > get_ms_by_day(1 / 24 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(1 / 24 * sampling_rate))
         x_unit = 'hour'
-    else if (date_diff > get_ms_by_day(1 / (24 * 60) * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(1 / (24 * 60) * sampling_rate))
         x_unit = 'minute'
     else
         x_unit = 'second'
@@ -208,7 +141,6 @@ async function calculate_stat(data, sampling_rate, topic_id_map) {
         }
         let meta_info = JSON.parse((await MetaSnap.get_meta_by_tid(topic_id))[0].metadata)
         stat_dict[i].unit = meta_info.units
-        console.log(stat_dict[i].unit)
         stat_dict[i].max = max_value
         stat_dict[i].min = min_value
         if (num_of_data !== 0)
@@ -221,21 +153,9 @@ async function calculate_stat(data, sampling_rate, topic_id_map) {
 }
 
 router.get('/', async (ctx, next) => {
-    const topic_names = await TopicSnap.find_all()
     let dict_render = {}
-    let name_tree = {}
-    for (i = 0; i < topic_names.length; ++i) {
-        const topic = topic_names[i]
-        let topic_name = topic.topic_name
-        let name_component = topic_name.split('/')
-        name_tree = expand_trie(name_tree, name_component)
-    }
-    let names = []
-    await Object.keys(name_tree).forEach((top_level_keys) => {
-        let next_value = construct_names(name_tree[top_level_keys], top_level_keys)
-        Object.assign(names, next_value)
-    })
-    dict_render['topics'] = names
+    dict_render['topics'] = await Utils.get_all_categorized_topics()
+    dict_render.location = 'home'
     await ctx.render('index', dict_render)
 })
 
@@ -248,7 +168,7 @@ router.get('/', async (ctx, next) => {
  */
 router.post('/query', async (ctx, next) => {
     let params = ctx.request.body
-    let topic = params.topic
+    let topics = params.topic
     let date_start = params.time_start.date
     let time_start = params.time_start.time
     let date_end = params.time_end.date
@@ -264,24 +184,7 @@ router.post('/query', async (ctx, next) => {
             message: 'Error: Time end is before time start'
         }
     } else {
-        // Get topic id and make into a map from names to ids
-        topic.sort((x, y) => {
-            return x.length - y.length
-        })
-
-        let name_set = new Set()
-        let topic_id_map = {}
-
-        for (let i = 0; i < topic.length; ++i) {
-            if (!name_set.has(topic[i])) {
-                let similar_names = (await TopicSnap.get_by_name_like(topic[i]))
-                for (let j = 0; j < similar_names.length; ++j) {
-                    name_set.add(similar_names[j].topic_name)
-                    topic_id_map[similar_names[j].topic_name] = similar_names[j].topic_id
-                }
-            }
-        }
-
+        let topic_id_map = await Utils.get_topic_id_map(topics)
         let data_list = []
         let item_count = 0
         for (let each in topic_id_map) {

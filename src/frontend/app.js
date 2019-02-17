@@ -52,6 +52,7 @@ global.db.connectDatabase()
 
 // Load Routers
 const index = require('./routes/index')
+const monitor = require('./routes/realtime')
 
 // error handler
 onerror(app)
@@ -78,6 +79,7 @@ app.use(async (ctx, next) => {
 
 // routes
 app.use(index.routes(), index.allowedMethods())
+app.use(monitor.routes(), monitor.allowedMethods())
 
 // error page
 app.use(async (ctx, next) => {

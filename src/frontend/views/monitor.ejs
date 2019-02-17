@@ -1,0 +1,133 @@
+<% include header %>
+<div id="chart-wrapper">
+    <canvas id="monitor" height="auto" style="padding: 10px"></canvas>
+</div>
+<div class="container">
+    <div class="row">
+        <div align="center" style="padding-top: 10px">
+            <a class="waves-effect waves-light btn-small modal-trigger" href="#config-modal"><i class="material-icons left">settings</i>Configuration</a>
+        </div>
+        <div class="modal modal-fixed-footer" id="config-modal">
+            <div class="modal-content">
+                <h4>Monitor Config</h4>
+                <div class="container" style="padding-top: 20px">
+                    <ul class="collapsible">
+                        <% for (let i of Object.keys(topics)) { %>
+                            <li>
+                                <div class="collapsible-header"><%= i %></div>
+                                    <div class="collapsible-body">
+                                        <div class="row">
+                                            <% for (let j of topics[i]) {%>
+                                                <div class="col s6">
+                                                    <label>
+                                                        <% if (i === j) { %>
+                                                            <input type="checkbox" value="<%= j %>"/>
+                                                            <span>All</span>
+                                                        <% } else { %>
+                                                            <input type="checkbox" value="<%= i + '/' + j %>"/>
+                                                            <span><%= j %></span>
+                                                        <% } %>
+                                                    </label>
+
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                            </li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-close waves-effect waves-green btn-flat">Dismiss</a>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $('.modal').modal()
+        $('.collapsible').collapsible()
+        $('input:checkbox').change(function() {
+            if ($(this).is(':checked')) {
+                query_list.add(this.value)
+            } else {
+                query_list.delete(this.value)
+                chart.data.datasets = chart.data.datasets.filter(function(topic_data) {
+                    return query_list.has(topic_data.label)
+                })
+                chart.update()
+            }
+        })
+        var query_list = new Set()
+        var canvas = document.getElementById("monitor").getContext('2d')
+        var chart = new Chart(canvas, {
+            // The type of chart we want to create
+            type: 'line',
+
+            // The data for our dataset
+            data: {
+                labels: [],
+                datasets: [/*{
+                    label: "My First dataset",
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [0, 10, 5, 2, 20, 30, 45],
+                }*/]
+            },
+
+            // Configuration options go here
+            options: {}
+        });
+        var querying = false
+        var random_color = function(alpha=1.0) {
+            let rand_num = () => {
+                return Math.floor(Math.random() * 256)
+            }
+            return `rgba(${rand_num()}, ${rand_num()}, ${rand_num()}, ${alpha})`
+        }
+        setInterval(function() {
+            if (!querying) {
+                querying = true
+                let post_data = {
+                    topics: query_list.size === 0 ? [] : Array.from(query_list)
+                }
+                $.post('/monitor/fetch', post_data, function(data, status) {
+                    querying = false
+                    if (chart.data.labels.length > 15) {
+                        chart.data.labels.shift()
+                        chart.data.datasets.forEach(function(topic_data) {
+                            topic_data.data.shift()
+                        })
+                    }
+                    chart.data.labels.push(data.time)
+                    for (let i of Object.keys(data)) {
+                        if (i === 'time') continue
+                        if (query_list.has(i)) {
+                            let found = false
+                            for (let j of chart.data.datasets) {
+                                if (j.label === i) {
+                                    j.data.push(data[i])
+                                    found = true
+                                    break
+                                }
+                            }
+                            if (!found) {
+                                let data = []
+                                for (let i = 0; i < chart.data.labels.length - 1; ++i) data.push(null)
+                                data.push(data[i])
+                                chart.data.datasets.push({
+                                    label: i,
+                                    borderColor: random_color(),
+                                    fill: false,
+                                    data: data,
+                                })
+                            }
+                        }
+                    }
+                    chart.update()
+                }).fail(function() {
+                    alert('Network error.')
+                })
+            }
+        }, 1000)
+    </script>
+</div>
