@@ -23,7 +23,7 @@ router.post('/fetch', async (ctx, next) => {
         // Since the collectors are not implemented yet, this currently will only return fake data.
         let dict_render = {}
         for (let i of Object.keys(topic_id_map)) {
-            dict_render[i] = Math.random() * 114.5141919810
+            dict_render[i] = Math.sin(Date.now()) + Math.random() * 1.145141919810
         }
         dict_render.time = formatTime(Date.now()).toLocaleTimeString()
         console.log(dict_render)

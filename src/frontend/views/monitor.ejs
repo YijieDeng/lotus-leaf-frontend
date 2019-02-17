@@ -4,8 +4,9 @@
 </div>
 <div class="container">
     <div class="row">
-        <div align="center" style="padding-top: 10px">
-            <a class="waves-effect waves-light btn-small modal-trigger" href="#config-modal"><i class="material-icons left">settings</i>Configuration</a>
+        <div class="row" align="center" style="padding-top: 10px">
+                <a class="waves-effect waves-light btn-small modal-trigger" href="#config-modal"><i class="material-icons left">settings</i>Configuration</a>
+                <a id="toggle-record" class="waves-effect waves-light red btn-small"><i id="btn-icon" class="material-icons">pause</i></a>
         </div>
         <div class="modal modal-fixed-footer" id="config-modal">
             <div class="modal-content">
@@ -57,6 +58,18 @@
                 chart.update()
             }
         })
+        $('#toggle-record').on('click', function() {
+            if (!pause) {
+                $('#btn-icon').text('play_arrow')
+                $('#toggle-record').attr('class', 'waves-effect waves-light green btn-small')
+                pause = true
+            } else {
+                $('#btn-icon').text('pause')
+                $('#toggle-record').attr('class', 'waves-effect waves-light red btn-small')
+                pause = false
+            }
+        })
+        var pause = false
         var query_list = new Set()
         var canvas = document.getElementById("monitor").getContext('2d')
         var chart = new Chart(canvas, {
@@ -85,7 +98,7 @@
             return `rgba(${rand_num()}, ${rand_num()}, ${rand_num()}, ${alpha})`
         }
         setInterval(function() {
-            if (!querying) {
+            if (!querying && !pause) {
                 querying = true
                 let post_data = {
                     topics: query_list.size === 0 ? [] : Array.from(query_list)
