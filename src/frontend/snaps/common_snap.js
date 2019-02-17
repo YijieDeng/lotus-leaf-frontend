@@ -11,16 +11,16 @@ const CommonSnap = {
      * @returns {*} a new object that contains updated data.
      */
     expand_trie(dict, name_arr) {
-            if (name_arr.length === 0) return dict
-            else if (name_arr.length === 1) {
-                if (!dict.hasOwnProperty('places')) dict['places'] = []
-                dict.places.push(name_arr[0])
-            } else {
-                const hd = name_arr[0]
-                if (!dict.hasOwnProperty(hd)) dict[hd] = {}
-                this.expand_trie(dict[hd], name_arr.slice(1))
-                return dict
-            }
+        if (name_arr.length === 0) return dict
+        else if (name_arr.length === 1) {
+            if (!dict.hasOwnProperty('places')) dict['places'] = []
+            dict.places.push(name_arr[0])
+        } else {
+            const hd = name_arr[0]
+            if (!dict.hasOwnProperty(hd)) dict[hd] = {}
+            this.expand_trie(dict[hd], name_arr.slice(1))
+            return dict
+        }
     },
 
     /**

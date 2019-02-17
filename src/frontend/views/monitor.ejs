@@ -1,6 +1,6 @@
 <% include header %>
 <div id="chart-wrapper">
-    <canvas id="monitor" height="auto" style="padding: 10px"></canvas>
+    <canvas id="monitor" height="160" style="padding: 10px"></canvas>
 </div>
 <div class="container">
     <div class="row">
@@ -44,16 +44,17 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript" src="javascripts/name_tree.js"></script>
     <script type="text/javascript">
         $('.modal').modal()
         $('.collapsible').collapsible()
         $('input:checkbox').change(function() {
             if ($(this).is(':checked')) {
-                query_list.add(this.value)
+                Trie.expand_trie(make_arr(this.value))
             } else {
-                query_list.delete(this.value)
+                Trie.remove(make_arr(this.value))
                 chart.data.datasets = chart.data.datasets.filter(function(topic_data) {
-                    return query_list.has(topic_data.label)
+                    return Trie.contains_name(make_arr(topic_data.label)) || Trie.contains_long(topic_data.label)
                 })
                 chart.update()
             }
@@ -69,25 +70,15 @@
                 pause = false
             }
         })
+        var make_arr = function (name) { return name.split('/') }
         var pause = false
-        var query_list = new Set()
         var canvas = document.getElementById("monitor").getContext('2d')
         var chart = new Chart(canvas, {
-            // The type of chart we want to create
             type: 'line',
-
-            // The data for our dataset
             data: {
                 labels: [],
-                datasets: [/*{
-                    label: "My First dataset",
-                    backgroundColor: 'rgba(0, 0, 0, 0)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    data: [0, 10, 5, 2, 20, 30, 45],
-                }*/]
+                datasets: []
             },
-
-            // Configuration options go here
             options: {}
         });
         var querying = false
@@ -101,7 +92,7 @@
             if (!querying && !pause) {
                 querying = true
                 let post_data = {
-                    topics: query_list.size === 0 ? [] : Array.from(query_list)
+                    topics: Trie.construct_all()
                 }
                 $.post('/monitor/fetch', post_data, function(data, status) {
                     querying = false
@@ -114,7 +105,7 @@
                     chart.data.labels.push(data.time)
                     for (let i of Object.keys(data)) {
                         if (i === 'time') continue
-                        if (query_list.has(i)) {
+                        if (Trie.contains_name(make_arr(i)) || Trie.contains_long(i)) {
                             let found = false
                             for (let j of chart.data.datasets) {
                                 if (j.label === i) {
