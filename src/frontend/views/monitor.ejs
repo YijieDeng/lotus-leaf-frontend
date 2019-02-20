@@ -22,10 +22,10 @@
                                                 <div class="col s6">
                                                     <label>
                                                         <% if (i === j) { %>
-                                                            <input type="checkbox" value="<%= j %>"/>
+                                                            <input data-type="select-all" type="checkbox" value="<%= j %>"/>
                                                             <span>All</span>
                                                         <% } else { %>
-                                                            <input type="checkbox" value="<%= i + '/' + j %>"/>
+                                                            <input data-type="select-single" type="checkbox" value="<%= i + '/' + j %>"/>
                                                             <span><%= j %></span>
                                                         <% } %>
                                                     </label>
@@ -50,8 +50,27 @@
         $('.collapsible').collapsible()
         $('input:checkbox').change(function() {
             if ($(this).is(':checked')) {
-                Trie.expand_trie(make_arr(this.value))
+                if ($(this).attr('data-type') === 'select-all') {
+                    let prefix = this.value
+                    let expand_checkbox = Array.from($('input:checkbox')).filter(function (chk) {
+                        return chk.value.indexOf(prefix) !== -1 && chk.value !== prefix
+                    })
+                    expand_checkbox.forEach(function (chk) {
+                        chk.checked = true
+                        Trie.expand_trie(make_arr(chk.value))
+                    })
+                } else {
+                    Trie.expand_trie(make_arr(this.value))
+                }
             } else {
+                if ($(this).attr('data-type') === 'select-all') {
+                    let prefix = this.value
+                    Array.from($('input:checkbox')).filter(function (chk) {
+                        return chk.value.indexOf(prefix) !== -1 && chk.value !== prefix
+                    }).forEach(function (chk) {
+                        chk.checked = false
+                    })
+                }
                 Trie.remove(make_arr(this.value))
                 chart.data.datasets = chart.data.datasets.filter(function(topic_data) {
                     return Trie.contains_name(make_arr(topic_data.label)) || Trie.contains_long(topic_data.label)
