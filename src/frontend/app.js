@@ -48,6 +48,8 @@ global.log = (msg) => {
         console.log(`[Manual Log] => ${msg}`)
 }
 
+console.log = config.mode === 'dev' ? console.log : (x) => {}
+
 global.db.connectDatabase()
 
 // Load Routers
