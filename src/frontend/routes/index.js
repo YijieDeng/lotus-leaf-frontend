@@ -11,7 +11,7 @@ const Utils = global.db.load_snap('common_snap')
  * Return the javascript code used to render the chart
  * This operation is not pure thus the string returned should be guaranteed
  * that it does not contain malicious code
- *  TODO: considering to construct bar charts | fix time issue
+ *  TODO: considering to construct bar charts
  *
  * @returns {string} the code for rendering chartjs
  */
@@ -41,6 +41,7 @@ function render_chart(data, chart_style, sampling_rate) {
         let data_arr = data[i]
         let current_data = {label: i, fill: chart_style === 'bubble' || chart_style === 'bar', data: []}
         if (current_data.fill) {
+            // Alpha for bubble and bar charts
             current_data.backgroundColor = Utils.random_color(0.3)
             current_data.borderColor = remove_alpha(current_data.backgroundColor)
             if (chart_style === 'bubble') {
@@ -54,6 +55,7 @@ function render_chart(data, chart_style, sampling_rate) {
         }
         let num_of_data = data_arr.length * sampling_rate
         let step = data_arr.length / num_of_data
+        // Get date information
         for (let j = 0; j < data_arr.length; j += step) {
             let current_date = new Date(data_arr[j].ts)
             if (current_date > max_date)
@@ -66,8 +68,8 @@ function render_chart(data, chart_style, sampling_rate) {
     }
     let date_diff = max_date - min_date
 
-
     let x_unit = ''
+    // Adjust the scale of the chart
     if (date_diff > Utils.get_ms_by_day(2 * 365 * sampling_rate))
         x_unit = 'year'
     else if (date_diff > Utils.get_ms_by_day(90 * sampling_rate))
@@ -84,8 +86,6 @@ function render_chart(data, chart_style, sampling_rate) {
         x_unit = 'minute'
     else
         x_unit = 'second'
-
-    console.log(x_unit)
 
     return `new Chart(ctx, {
                     type: '${chart_style}',
@@ -118,6 +118,14 @@ function render_chart(data, chart_style, sampling_rate) {
                 })`
 }
 
+/**
+ * Calculate statistical data (max, min and mean)
+ *
+ * @param data              An array of data get from database query
+ * @param sampling_rate     The rate of sample points used in the calculation
+ * @param topic_id_map      A map from Topic name to id
+ * @returns {Promise<void>} the calculated value with unit
+ */
 async function calculate_stat(data, sampling_rate, topic_id_map) {
     let stat_dict = {}
     for (let i in data) {
