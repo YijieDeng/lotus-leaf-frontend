@@ -91,7 +91,7 @@ app.use(async (ctx, next) => {
             ctx.throw(404);
         }
     } catch (err) {
-        let dict_render = {}
+        let dict_render = {location: "error"}
         console.error(err.stack);
         const status = err.status || 500;
         dict_render.error_code = err.status

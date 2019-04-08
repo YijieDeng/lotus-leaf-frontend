@@ -50,19 +50,26 @@
         $('.collapsible').collapsible()
         $('input:checkbox').change(function() {
             if ($(this).is(':checked')) {
+                // Handle select all and select single
                 if ($(this).attr('data-type') === 'select-all') {
+                    // Select all is for selecting all topics of a panel
                     let prefix = this.value
                     let expand_checkbox = Array.from($('input:checkbox')).filter(function (chk) {
+                        // filter all checkboxes that controls topics of the panel
+                        // except 'select all' itself
                         return chk.value.indexOf(prefix) !== -1 && chk.value !== prefix
                     })
                     expand_checkbox.forEach(function (chk) {
+                        // check all boxes and add topic names into the trie
                         chk.checked = true
                         Trie.expand_trie(make_arr(chk.value))
                     })
                 } else {
+                    // add the topics name into the trie
                     Trie.expand_trie(make_arr(this.value))
                 }
             } else {
+                // dis-select all
                 if ($(this).attr('data-type') === 'select-all') {
                     let prefix = this.value
                     Array.from($('input:checkbox')).filter(function (chk) {
@@ -73,12 +80,15 @@
                 }
                 Trie.remove(make_arr(this.value))
                 chart.data.datasets = chart.data.datasets.filter(function(topic_data) {
+                    // remove data from the realtime graph
                     return Trie.contains_name(make_arr(topic_data.label)) || Trie.contains_long(topic_data.label)
                 })
                 chart.update()
             }
         })
         $('#toggle-record').on('click', function() {
+            // control for pausing the monitor
+            // Note: this will not affect data collection at the backend
             if (!pause) {
                 $('#btn-icon').text('play_arrow')
                 $('#toggle-record').attr('class', 'waves-effect waves-light green btn-small')
@@ -88,10 +98,13 @@
                 $('#toggle-record').attr('class', 'waves-effect waves-light red btn-small')
                 pause = false
             }
+            // set last query to null
             last_query = null
         })
+        // this is for maintaining names in the trie.
         var make_arr = function (name) { return name.split('/') }
         var pause = false
+        // initialize the chart
         var canvas = document.getElementById("monitor").getContext('2d')
         var chart = new Chart(canvas, {
             type: 'line',
@@ -109,10 +122,14 @@
             return `rgba(${rand_num()}, ${rand_num()}, ${rand_num()}, ${alpha})`
         }
         var last_query = null
+
+        // Query task
         setInterval(function() {
             if (!querying && !pause) {
+                // prevent sending multiple query a time
                 querying = true
                 let post_data = {
+                    // see documentation for Trie
                     topics: Trie.construct_all(),
                     last_query: last_query
                 }
