@@ -43,7 +43,8 @@ $("#submit-query").on("click", function() {
                 date: to_date.value
             },
             sample_rate: sample_rate ,
-            chart_style: $('#chart-style-select').val()
+            chart_style: $('#chart-style-select').val(),
+            _csrf: document.head.getAttribute('data-csrf-token')
         }
         $.post('/query', post_data, function (data, status) {
             M.Toast.dismissAll();

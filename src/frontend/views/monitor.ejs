@@ -131,7 +131,8 @@
                 let post_data = {
                     // see documentation for Trie
                     topics: Trie.construct_all(),
-                    last_query: last_query
+                    last_query: last_query,
+                    _csrf: document.head.getAttribute('data-csrf-token')
                 }
                 $.post('/monitor/fetch', post_data, function(data, status) {
                     querying = false

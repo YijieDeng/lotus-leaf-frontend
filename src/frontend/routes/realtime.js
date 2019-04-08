@@ -12,6 +12,7 @@ router.prefix('/monitor')
 router.get('/', async (ctx, next) => {
     let dict_render = {location: 'realtime'}
     dict_render.topics = await Utils.get_all_categorized_topics()
+    dict_render.csrf = ctx.csrf
     await ctx.render('monitor', dict_render)
 })
 

@@ -164,6 +164,7 @@ router.get('/', async (ctx, next) => {
     let dict_render = {}
     dict_render['topics'] = await Utils.get_all_categorized_topics()
     dict_render.location = 'home'
+    dict_render.csrf = ctx.csrf
     await ctx.render('index', dict_render)
 })
 

@@ -5,6 +5,9 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
+const CSRF = require('koa-csrf')
+const session = require('koa-generic-session')
+const convert = require('koa-convert')
 
 
 // Global Vars
@@ -60,8 +63,18 @@ const monitor = require('./routes/realtime')
 onerror(app)
 
 // middlewares
+app.keys = [config.secrete_key, config.session_key]
+app.use(convert(session()));
 app.use(bodyparser({
     enableTypes:['json', 'form', 'text']
+}))
+app.use(new CSRF({
+    invalidStatusCode: 403,
+    invalidTokenMessage: 'Invalid CSRF token',
+    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+    ignorePaths: [],
+    secretLength: 16,
+    saltRounds: 10
 }))
 app.use(json())
 app.use(logger())
