@@ -35,27 +35,33 @@ router.post('/fetch', async (ctx, next) => {
         if (last_query !== null) {
             where_arg = {
                 ts: {
-                    [Op.gt]: new Date(last_query),
-                    [Op.lte]: new Date(Date.now())
-                }
+                    [Op.gt]: new Date(last_query - 1000 * 2),
+                    [Op.lte]: new Date(Date.now()),
+                },
             }
         } else {
             where_arg = {
                 ts: {
                     [Op.gt]: new Date(Date.now() - 1000 * 10), // 10 seconds before
-                    [Op.lte]: new Date(Date.now())
+                    [Op.lte]: new Date(Date.now()),
                 }
             }
+        }
+        const process_time = (ts) => {
+            let date = new Date(ts)
+            let diff = date.getTimezoneOffset() * 60000
+            return (new Date(date.getTime() - diff)).toLocaleTimeString()
         }
         let ts = null
         let has_data = Object.keys(topic_id_map).length !== 0
         for (let i of Object.keys(topic_id_map)) {
-            let data_arr = await DataSnap.get_data_by_tid(topic_id_map[i], where_arg)
+            let data_arr = await DataSnap.get_data_by_tid(topic_id_map[i], where_arg, [['ts', 'DESC']])
             if (data_arr.length > 0) {
                 dict_render[i] = parseFloat(data_arr[0].value_string)
                 if (ts === null) {
                     // Get time stamp
-                    ts = formatTime(new Date(data_arr[0].ts).toLocaleTimeString())
+                    ts = data_arr[0].ts.toLocaleString()
+                    ts = process_time(ts)
                 }
             } else {
                 dict_render[i] = null
