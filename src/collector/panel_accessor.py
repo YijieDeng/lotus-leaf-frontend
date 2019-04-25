@@ -41,6 +41,45 @@ class PanelAccessor:
     """
     self._modbus_client = ModbusTcpClient(host)
     self._metrics = metrics
+    self._host = host
+
+  def reconnect(limit=3):
+    """Try reconnect without creating a new instance.
+
+    Args:
+      limit: the limit of times trying to reconnect. default=3
+    """
+    if not self._modbus_client.is_socket_open():
+      success = False
+      print('reconnecting with current instance...')
+      # Try to connect the panel `limit` times
+      for _ in range(limit):
+        if self._modbus_client.connect():
+          success = True
+          break
+      return success
+    return True
+
+  def new_instance_reconnect():
+    """Try to reconnect to the panel by creating a new connection
+    """
+    if not self._modbus_client.is_socket_open():
+      print('trying to create new instance...')
+      this._modbus_client = ModbusTcpClient(self._host)
+      return this._modbus_client.connect()
+    return True
+  
+  def try_reconnect(limit=3):
+    """Reconnection strategy.
+
+    Args:
+      limit: the limit of times try to reconnect to the panels. default=3
+    """
+    # Try connect with current instance first
+    if not this.reconnect(limit):
+      print('Reconnecting with current instance failed..')
+      return this.new_instance_reconnect()
+
 
   @property
   def metrics(self):
@@ -71,8 +110,21 @@ class PanelAccessor:
       The current value of the metric.
     """
     metric = self._metrics[name]
-    result = self._modbus_client.read_holding_registers(
-      metric.address, metric.size, unit=0x01)
+    # Whether the data is returned
+    data_recieved = False
+    # Whether we performed reconnection
+    reconnection_exhausted = False
+
+    while not data_recieved and not reconnection_exhausted:
+      try:
+        result = self._modbus_client.read_holding_registers(
+          metric.address, metric.size, unit=0x01)
+        data_recieved = True
+      except:
+        this.try_reconnect()
+        reconnection_exhausted = True
+    if not data_recieved:
+      raise Error('Connection lost, reconnection failed')
 
     decoder = BinaryPayloadDecoder.fromRegisters(
       result.registers, byteorder=Endian.Big, wordorder=Endian.Big)
