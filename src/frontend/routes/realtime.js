@@ -48,6 +48,7 @@ router.post('/fetch', async (ctx, next) => {
             }
         }
         const process_time = (ts) => {
+            // convert UTC time to local time string
             let date = new Date(ts)
             let diff = date.getTimezoneOffset() * 60000
             return (new Date(date.getTime() - diff)).toLocaleTimeString()
@@ -67,7 +68,7 @@ router.post('/fetch', async (ctx, next) => {
                 dict_render[i] = null
             }
         }
-        if (has_data)
+        if (has_data && ts !== null)
             dict_render.time = ts
         else
             dict_render.time = new Date().toLocaleTimeString()

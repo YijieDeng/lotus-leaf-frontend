@@ -1,7 +1,7 @@
 const DataDB = global.db.load_model('data')
 
 const DataSnap = {
-    async get_data_by_tid(tid, where_clause = {}, order = {}) {
+    async get_data_by_tid(tid, where_clause = {}, order = []) {
         return (await DataDB.findAll({
             where: Object.assign(where_clause, {topic_id: tid}),
             order: order,

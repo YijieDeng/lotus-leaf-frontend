@@ -11,10 +11,11 @@ const convert = require('koa-convert')
 
 
 // Global Vars
-global.formatTime = (time) => {
-    let date = new Date(time)
-    let offset = -(new Date().getTimezoneOffset() / 60)
-    return new Date(date.getTime() + offset)
+global.format_time = (ts) => {
+    // convert UTC time to local time string
+    let date = new Date(ts)
+    let diff = date.getTimezoneOffset() * 60000
+    return (new Date(date.getTime() - diff))
 }
 global.config = require('./.config')
 global.sequelize = require('sequelize')

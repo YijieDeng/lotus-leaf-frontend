@@ -6,6 +6,7 @@ const Op = (require('sequelize')).Op
 const ejs = require('ejs')
 const fs = require('fs')
 const Utils = global.db.load_snap('common_snap')
+const moment = require('moment')
 
 /**
  * Return the javascript code used to render the chart
@@ -62,7 +63,8 @@ function render_chart(data, chart_style, sampling_rate) {
                 max_date = current_date
             if (min_date === null || current_date < min_date)
                 min_date = current_date
-            current_data.data.push({x: data_arr[j].ts.toString(), y: parseFloat(data_arr[j].value_string)})
+            current_data.data.push({x: moment(format_time(data_arr[j].ts)).format(),
+                y: parseFloat(data_arr[j].value_string)})
         }
         datasets.push(current_data)
     }
@@ -87,6 +89,8 @@ function render_chart(data, chart_style, sampling_rate) {
     else
         x_unit = 'second'
 
+    console.log(x_unit)
+
     return `new Chart(ctx, {
                     type: '${chart_style}',
                     data: {
@@ -102,14 +106,14 @@ function render_chart(data, chart_style, sampling_rate) {
                                         unitStepSize: 1,
                                         displayFormats: {
                                             'millisecond': '',
-                                            'second': 'MMM DD',
-                                            'minute': 'MMM DD',
-                                            'hour': 'MMM DD',
-                                            'day': 'MMM DD',
+                                            'second': 'mm:ss',
+                                            'minute': 'HH:mm:ss',
+                                            'hour': 'HH:mm',
+                                            'day': 'MMM DD HH',
                                             'week': 'MMM DD',
                                             'month': 'MMM DD',
-                                            'quarter': 'MMM DD',
-                                            'year': 'MMM DD',
+                                            'quarter': 'MMM',
+                                            'year': 'MMM',
                                         }
                                     }
                                 }]
@@ -200,14 +204,13 @@ router.post('/query', async (ctx, next) => {
             if (typeof each !== 'undefined') {
                 data_list[each] = (await DataSnap.get_data_by_tid(topic_id_map[each], {
                     ts: {
-                        [Op.lt]: `${datetime_end.toLocaleDateString()} ${datetime_end.toLocaleTimeString()}`,
-                        [Op.gt]: `${datetime_start.toLocaleDateString()} ${datetime_start.toLocaleTimeString()}`
+                        [Op.lt]: new Date(`${datetime_end.toLocaleDateString()} ${datetime_end.toLocaleTimeString()}`),
+                        [Op.gt]: new Date(`${datetime_start.toLocaleDateString()} ${datetime_start.toLocaleTimeString()}`)
                     }
                 }))
                 item_count += data_list[each].length
             }
         }
-
         if (item_count === 0) {
             ctx.body = {
                 status: 'error', message: 'No data to display'
