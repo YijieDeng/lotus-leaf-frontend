@@ -89,8 +89,6 @@ function render_chart(data, chart_style, sampling_rate) {
     else
         x_unit = 'second'
 
-    console.log(x_unit)
-
     return `new Chart(ctx, {
                     type: '${chart_style}',
                     data: {
