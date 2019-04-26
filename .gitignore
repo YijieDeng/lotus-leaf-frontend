@@ -12,4 +12,3 @@ src/server/env/
 .DS_Store
 */node_modules
 */config.js
-*/package-lock.json
