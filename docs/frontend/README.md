@@ -1,7 +1,7 @@
 # Web Panel for UW Solar Panels
 This is a reconstruction project of UW Solar Data Project.
 
-# Requirements
+## Requirements
 - MySQL
 - NodeJS (v9.4.0 used for testing)
 
