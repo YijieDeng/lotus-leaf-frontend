@@ -37,7 +37,7 @@ The source code of `collector` is in `src/collector`.
 
 To start the collector, run `main.py`. Here are supported `long params` of `main.py`
 
-**Database configurations:**
+**Database Configurations:**
 
 |    Param     |                     Meaning                      | Required or not | Default Value |
 | :----------: | :----------------------------------------------: | :-------------: | :-----------: |
@@ -68,7 +68,7 @@ To start the collector, run `main.py`. Here are supported `long params` of `main
 
 ## Notice
 
-If you encountered issues like`No module named 'collector'` while running `python3 main.py`, please configurre your `PYTHONPATH` in `src` folder by running:
+If you encounter issues such as: `No module named 'collector'` while running `python3 main.py`, please configure your `PYTHONPATH` in `src` folder by running:
 
 ```bash
 PYTHONPATH="$(pwd)";export PYTHONPATH
