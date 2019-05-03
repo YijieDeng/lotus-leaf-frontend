@@ -12,7 +12,7 @@ router.prefix('/monitor')
 router.get('/', async (ctx, next) => {
     let dict_render = {location: 'realtime'}
     dict_render.topics = await Utils.get_all_categorized_topics()
-    dict_render.csrf = ctx.csrf
+    // dict_render.csrf = ctx.csrf
     await ctx.render('monitor', dict_render)
 })
 
@@ -30,6 +30,7 @@ router.post('/fetch', async (ctx, next) => {
     if (typeof topics_list !== 'undefined') {
         const topic_id_map = await Utils.get_topic_id_map(topics_list)
         let dict_render = {}
+        // dict_render.csrf = ctx.csrf
         let where_arg = {}
         // If this is not a first query
         if (last_query !== null) {
@@ -74,7 +75,7 @@ router.post('/fetch', async (ctx, next) => {
             dict_render.time = new Date().toLocaleTimeString()
         ctx.body = dict_render
     } else {
-        ctx.body = {time: formatTime(Date.now()).toLocaleTimeString()}
+        ctx.body = {time: new Date(Date.now()).toLocaleTimeString()}
     }
 })
 

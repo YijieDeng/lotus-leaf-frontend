@@ -132,7 +132,7 @@
                     // see documentation for Trie
                     topics: Trie.construct_all(),
                     last_query: last_query,
-                    _csrf: document.head.getAttribute('data-csrf-token')
+                    // _csrf: document.head.getAttribute('data-csrf-token')
                 }
                 $.post('/monitor/fetch', post_data, function(data, status) {
                     querying = false
@@ -169,8 +169,14 @@
                         }
                     }
                     chart.update()
-                }).fail(function() {
-                    alert('Network error.')
+                }).fail(function(data, status) {
+                    if (data.status === 403) {
+                        alert('CSRF Expired. Please refresh CSRF token')
+                    } else if (data.status === 500) {
+                        alert('Server Internal Error.')
+                    } else {
+                        alert('Network Error')
+                    }
                 })
             }
         }, 3000)
