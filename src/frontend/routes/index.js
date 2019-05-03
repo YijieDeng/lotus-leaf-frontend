@@ -9,14 +9,31 @@ const Utils = global.db.load_snap('common_snap')
 const moment = require('moment')
 
 /**
+ * Calculate the rate of reduction on number of data in a dataset.
+ * this is for avoid low rendering efficiency on frontend.
+ *
+ * @param len # of data in the dataset
+ * @returns {float} the rate of reduction
+ * @type Int -> float
+ */
+function calc_reduce_rate(len) {
+    if (len <= 50) return 1.0;
+    else if (len <= 100) return 0.7;
+    else if (len <= 500) return 0.5;
+    else if (len <= 2000) return 0.4;
+    else return 2000 / len;
+}
+
+/**
  * Return the javascript code used to render the chart
  * This operation is not pure thus the string returned should be guaranteed
  * that it does not contain malicious code
  *  TODO: considering to construct bar charts
  *
  * @returns {string} the code for rendering chartjs
+ * @type [[Object]] -> String -> string
  */
-function render_chart(data, chart_style, sampling_rate) {
+function render_chart(data, chart_style) {
     const allowed_styles = ['line', 'scatter', 'bubble', 'bar']
     let proceed = false;
     let datasets = []
@@ -54,17 +71,23 @@ function render_chart(data, chart_style, sampling_rate) {
         } else {
            current_data.borderColor = Utils.random_color(0.7)
         }
-        let num_of_data = data_arr.length * sampling_rate
-        let step = data_arr.length / num_of_data
+        // reduce number of data
+        let num_of_data = Math.round(data_arr.length * calc_reduce_rate(data_arr.length))
+        // step eval
+        let step = Math.floor(data_arr.length / num_of_data)
+        console.log('-----------------')
+        console.log(`before ${data_arr.length} after ${num_of_data}`)
         // Get date information
         for (let j = 0; j < data_arr.length; j += step) {
-            let current_date = new Date(data_arr[j].ts)
-            if (current_date > max_date)
-                max_date = current_date
-            if (min_date === null || current_date < min_date)
-                min_date = current_date
-            current_data.data.push({x: moment(format_time(data_arr[j].ts)).format(),
-                y: parseFloat(data_arr[j].value_string)})
+            if (data_arr[j]) {
+                let current_date = new Date(data_arr[j].ts)
+                if (current_date > max_date)
+                    max_date = current_date
+                if (min_date === null || current_date < min_date)
+                    min_date = current_date
+                current_data.data.push({x: moment(format_time(data_arr[j].ts)).format(),
+                    y: parseFloat(data_arr[j].value_string)})
+            }
         }
         datasets.push(current_data)
     }
@@ -72,19 +95,19 @@ function render_chart(data, chart_style, sampling_rate) {
 
     let x_unit = ''
     // Adjust the scale of the chart
-    if (date_diff > Utils.get_ms_by_day(2 * 365 * sampling_rate))
+    if (date_diff > Utils.get_ms_by_day(2 * 365))
         x_unit = 'year'
-    else if (date_diff > Utils.get_ms_by_day(90 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(90))
         x_unit = 'quarter'
-    else if (date_diff > Utils.get_ms_by_day(30 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(30))
         x_unit = 'month'
-    else if (date_diff > Utils.get_ms_by_day(7 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(7))
         x_unit = 'week'
-    else if (date_diff > Utils.get_ms_by_day(2 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(2))
         x_unit = 'day'
-    else if (date_diff > Utils.get_ms_by_day(1 / 24 * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(1 / 24))
         x_unit = 'hour'
-    else if (date_diff > Utils.get_ms_by_day(1 / (24 * 60) * sampling_rate))
+    else if (date_diff > Utils.get_ms_by_day(1 / (24 * 60)))
         x_unit = 'minute'
     else
         x_unit = 'second'
@@ -128,7 +151,7 @@ function render_chart(data, chart_style, sampling_rate) {
  * @param topic_id_map      A map from Topic name to id
  * @returns {Promise<void>} the calculated value with unit
  */
-async function calculate_stat(data, sampling_rate, topic_id_map) {
+async function calculate_stat(data, topic_id_map) {
     let stat_dict = {}
     for (let i in data) {
         if (typeof i === 'undefined') break
@@ -139,15 +162,17 @@ async function calculate_stat(data, sampling_rate, topic_id_map) {
         let min_value = Number.MAX_SAFE_INTEGER
         let max_value = Number.MIN_SAFE_INTEGER
         let sum = 0.0
-        let num_of_data = data_arr.length * sampling_rate
-        let step = data_arr.length / num_of_data
+        let num_of_data = data_arr.length * calc_reduce_rate(data_arr.length)
+        let step = Math.floor(data_arr.length / num_of_data)
         num_of_data = 0
         for (let j = 0; j < data_arr.length; j += step) {
-            let point_data = parseFloat(data_arr[j].value_string)
-            sum += point_data
-            min_value = Math.min(min_value, point_data)
-            max_value = Math.max(max_value, point_data)
-            num_of_data += 1
+            if (data_arr[j]) {
+                let point_data = parseFloat(data_arr[j].value_string)
+                sum += point_data
+                min_value = Math.min(min_value, point_data)
+                max_value = Math.max(max_value, point_data)
+                num_of_data += 1
+            }
         }
         let meta_info = JSON.parse((await MetaSnap.get_meta_by_tid(topic_id))[0].metadata)
         stat_dict[i].unit = meta_info.units
@@ -219,8 +244,8 @@ router.post('/query', async (ctx, next) => {
             ctx.body = {
                 status: 'success',
                 message: 'Success!',
-                chart: render_chart(data_list, params.chart_style, sample_rate),
-                stat_content: ejs.render(stat_content_template, {stat_data: await calculate_stat(data_list, sample_rate, topic_id_map)}),
+                chart: render_chart(data_list, params.chart_style),
+                stat_content: ejs.render(stat_content_template, {stat_data: await calculate_stat(data_list, topic_id_map)}),
                 enable_stat: true
             }
         }
