@@ -100,6 +100,8 @@
             }
             // set last query to null
             last_query = null
+            // reset querying status
+            querying = false
         })
         // this is for maintaining names in the trie.
         var make_arr = function (name) { return name.split('/') }
@@ -134,8 +136,10 @@
                     last_query: last_query,
                     // _csrf: document.head.getAttribute('data-csrf-token')
                 }
+                console.log("Querying...")
                 $.post('/monitor/fetch', post_data, function(data, status) {
                     querying = false
+                    console.log("Data received")
                     last_query = Date.now()
                     if (chart.data.labels.length > 15) {
                         chart.data.labels.shift()

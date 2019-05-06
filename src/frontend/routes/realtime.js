@@ -26,7 +26,10 @@ router.get('/', async (ctx, next) => {
 router.post('/fetch', async (ctx, next) => {
     const params = ctx.request.body
     const topics_list = params.topics
-    const last_query = parseInt(params.last_query)
+    let last_query = null;
+    if (params.last_query) {
+        last_query = parseInt(params.last_query)
+    }
     if (typeof topics_list !== 'undefined') {
         const topic_id_map = await Utils.get_topic_id_map(topics_list)
         let dict_render = {}

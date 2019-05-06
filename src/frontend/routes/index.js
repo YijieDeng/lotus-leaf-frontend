@@ -75,8 +75,6 @@ function render_chart(data, chart_style) {
         let num_of_data = Math.round(data_arr.length * calc_reduce_rate(data_arr.length))
         // step eval
         let step = Math.floor(data_arr.length / num_of_data)
-        console.log('-----------------')
-        console.log(`before ${data_arr.length} after ${num_of_data}`)
         // Get date information
         for (let j = 0; j < data_arr.length; j += step) {
             if (data_arr[j]) {
