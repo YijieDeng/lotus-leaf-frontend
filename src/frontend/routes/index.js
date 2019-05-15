@@ -95,17 +95,17 @@ function render_chart(data, chart_style) {
     // Adjust the scale of the chart
     if (date_diff > Utils.get_ms_by_day(2 * 365))
         x_unit = 'year'
-    else if (date_diff > Utils.get_ms_by_day(90))
+    else if (date_diff > Utils.get_ms_by_day(180))
         x_unit = 'quarter'
-    else if (date_diff > Utils.get_ms_by_day(30))
+    else if (date_diff > Utils.get_ms_by_day(60))
         x_unit = 'month'
-    else if (date_diff > Utils.get_ms_by_day(7))
+    else if (date_diff > Utils.get_ms_by_day(14))
         x_unit = 'week'
     else if (date_diff > Utils.get_ms_by_day(2))
         x_unit = 'day'
-    else if (date_diff > Utils.get_ms_by_day(1 / 24))
+    else if (date_diff > Utils.get_ms_by_day(2 / 24))
         x_unit = 'hour'
-    else if (date_diff > Utils.get_ms_by_day(1 / (24 * 60)))
+    else if (date_diff > Utils.get_ms_by_day(2 / (24 * 60)))
         x_unit = 'minute'
     else
         x_unit = 'second'
@@ -172,15 +172,18 @@ async function calculate_stat(data, topic_id_map) {
                 num_of_data += 1
             }
         }
-        let meta_info = JSON.parse((await MetaSnap.get_meta_by_tid(topic_id))[0].metadata)
-        stat_dict[i].unit = meta_info.units
-        stat_dict[i].max = max_value
-        stat_dict[i].min = min_value
-        if (num_of_data !== 0)
-            stat_dict[i].mean = sum / num_of_data
-        else
-            stat_dict[i].mean = 'NaN'
-        stat_dict[i].range = max_value - min_value
+        let meta = (await MetaSnap.get_meta_by_tid(topic_id))[0];
+        if (meta) {
+            let meta_info = JSON.parse(meta.metadata)
+            stat_dict[i].unit = meta_info.units
+            stat_dict[i].max = max_value
+            stat_dict[i].min = min_value
+            if (num_of_data !== 0)
+                stat_dict[i].mean = sum / num_of_data
+            else
+                stat_dict[i].mean = 'NaN'
+            stat_dict[i].range = max_value - min_value
+        }
     }
     return stat_dict
 }
