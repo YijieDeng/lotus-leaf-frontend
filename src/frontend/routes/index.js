@@ -99,7 +99,7 @@ function render_chart(data, chart_style) {
         x_unit = 'quarter'
     else if (date_diff > Utils.get_ms_by_day(60))
         x_unit = 'month'
-    else if (date_diff > Utils.get_ms_by_day(14))
+    else if (date_diff > Utils.get_ms_by_day(30))
         x_unit = 'week'
     else if (date_diff > Utils.get_ms_by_day(2))
         x_unit = 'day'
@@ -128,7 +128,7 @@ function render_chart(data, chart_style) {
                                             'second': 'mm:ss',
                                             'minute': 'HH:mm:ss',
                                             'hour': 'HH:mm',
-                                            'day': 'MMM DD HH',
+                                            'day': 'MMM DD',
                                             'week': 'MMM DD',
                                             'month': 'MMM DD',
                                             'quarter': 'MMM',
