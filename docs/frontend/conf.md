@@ -13,4 +13,4 @@
     * dialect: type of the database (default mysql)
 - mode: `production` or `dev`. Running in `dev`, all the logs will be printed
 - session_key: identification of current session
-- secrete_ley: used for _csrf verification
+- secrete_ley: used for _csrf verification (currently disabled for real-time monitoring)

@@ -12,7 +12,10 @@ This is a reconstruction project of UW Solar Data Project.
 - Materialize CSS
 
 ## Installation
-First install `node` and `mysql-*`.
+Run `config-env.sh` to install requirements
+```
+sudo ./config-env.sh
+```
 
 Run `npm install` to install dependencies. Some of the
 libraries are static files in the project.
@@ -23,3 +26,8 @@ print logs to the terminal.
 
 Finally run `npm start` or `node app.js`. If you encountered a database error, check whether you have started
 daemon process or whether you have created the database you set in `config.js`.
+
+## Run with PM2
+If the configuration script finished correctly, `PM2` will be installed by default. You can run `pm2 start app.js` to load the application to pm2 and run it in background.
+
+To see more usage of pm2, go to [PM2 Official Website](http://pm2.keymetrics.io)

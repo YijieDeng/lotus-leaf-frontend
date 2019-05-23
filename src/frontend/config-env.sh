@@ -24,7 +24,7 @@ install_package 1 "NodeJS" "node" "nodejs"
 install_package 2 "MySQL" "mysql" "mysql-server"
 
 echo "Starting MySQL Service...."
-sudo service mysql restart
+sudo systemctl restart mysqld
 
 echo "----------------------"
 echo "| Configure Packages |"
