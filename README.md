@@ -1,13 +1,25 @@
-# UW Solar Power Monitor
+# Web Panel for UW Solar Panels
+This is a reconstruction project of UW Solar Data Project.
 
-## Data Collection Server
+# Requirements
+- MySQL
+- NodeJS (v9.4.0 used for testing)
 
-The ```collector``` directory contains a WSGI service that connects to a solar panel instance. The server may be queried to retrieve data from the solar panel and write the values to a database.
+## Dependencies and Libraries
+- Koa2
+- EJS
+- Chart.js
+- Materialize CSS
 
-## Database Utilities
+## Installation
+First install `node` and `mysql-*`.
 
-The following scripts and utilities help manage and interact with the Solar Power Monitor database:
+Run `npm install` to install dependencies. Some of the
+libraries are static files in the project.
 
-1. The ```gendata``` directory contains a tool that can be used to populate the database with sample data.
-2. The ```migration``` directory contains scripts that can be used to make incremental changes to the database schema.
-3. The ```sql``` directory contains sample SQL scripts that were used to create the original database schema.
+Then copy `config-example.js` as `config.js` and modify
+the configuration (Database, Port, etc). Turn `dev` to `true` will
+print logs to the terminal.
+
+Finally run `npm start` or `node app.js`. If you encountered a database error, check whether you have started
+daemon process or whether you have created the database you set in `config.js`.
