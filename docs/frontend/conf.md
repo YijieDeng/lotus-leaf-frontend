@@ -1,5 +1,7 @@
 # Configurations
 
+Before running the frontend server, make sure you have created a `.config.js` using the template `.config-example.js`. It is a hidden file.
+
 ## config.js
 
 `config.js` is a derived version from `config-example.js` (See `src/frontend/.config-example.js`)
