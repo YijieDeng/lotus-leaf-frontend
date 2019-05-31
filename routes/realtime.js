@@ -7,7 +7,7 @@ const Op = (require('sequelize')).Op
 const ejs = require('ejs')
 const fs = require('fs')
 
-router.prefix('/monitor')
+router.prefix(config.rootDir + 'monitor')
 
 router.get('/', async (ctx, next) => {
     let dict_render = {location: 'realtime'}

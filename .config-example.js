@@ -1,5 +1,6 @@
 config = {
     port: 8080,
+    rootDir: '/',
     db: {
         name: 'uw_solar',
         username: 'root',

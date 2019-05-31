@@ -8,6 +8,8 @@ const logger = require('koa-logger')
 // const CSRF = require('koa-csrf')
 const session = require('koa-generic-session')
 const convert = require('koa-convert')
+const serve = require('koa-static')
+const mount = require('koa-mount')
 
 
 // Global Vars
@@ -66,7 +68,7 @@ onerror(app)
 // middlewares
 app.use(json())
 app.use(logger())
-app.use(require('koa-static')(__dirname + '/public'))
+app.use(serve(__dirname + '/public')).use(mount(config.rootDir, serve(__dirname + '/public')))
 
 app.keys = [config.secrete_key, config.session_key]
 app.use(convert(session()));

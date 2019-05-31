@@ -136,7 +136,7 @@
                     last_query: last_query,
                     // _csrf: document.head.getAttribute('data-csrf-token')
                 }
-                $.post('/monitor/fetch', post_data, function(data, status) {
+                $.post(window.location.pathname + '/fetch', post_data, function(data, status) {
                     querying = false
                     last_query = Date.now()
                     if (chart.data.labels.length > 15) {

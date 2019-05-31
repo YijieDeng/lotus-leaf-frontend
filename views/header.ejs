@@ -11,9 +11,9 @@
     <div class="nav-wrapper" style="background-color : rgb(66, 38, 119);">
       <a href="#" class="brand-logo" style="padding-left : 20px">Solar Power Monitor</a>
       <ul id="nav-mobile" class="right hide-on-med-and-down">
-        <li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'home') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="/">Home</a></li>
-        <li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'realtime') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="/monitor">Real-Time Chart</a></li>
-        <li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'about') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="/about">About</a></li>
+        <li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'home') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="<%= config.rootDir %>">Home</a></li>
+        <li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'realtime') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="<%= config.rootDir %>monitor">Real-Time Chart</a></li>
+        <!--<li><a style="background-color : rgb(176, 155, 111); color : rgb(56, 56, 56); <% if (location === 'about') { %>font-weight : bold <% } %>" class="waves-effect waves-purple btn" href="<%= config.rootDir %>/about">About</a></li>-->
       </ul>
     </div>
   </nav>

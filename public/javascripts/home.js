@@ -9,6 +9,11 @@ var canvas = document.getElementById("chart")
 // Post data to middle-end and present error message or plot
 // the data given by the backend.
 window.chart = new Chart(ctx, {});
+function pathJoin(parts, sep){
+    var separator = sep || '/';
+    var replace   = new RegExp(separator+'{1,}', 'g');
+    return parts.join(separator).replace(replace, separator);
+}
 $("#submit-query").on("click", function() {
     let topic_select = $('#topic-select').val()
     let alert_text = document.getElementById('alert-text')
@@ -46,7 +51,7 @@ $("#submit-query").on("click", function() {
             chart_style: $('#chart-style-select').val(),
             // _csrf: document.head.getAttribute('data-csrf-token')
         }
-        $.post('/query', post_data, function (data, status) {
+        $.post(pathJoin([window.location.pathname, '/query']), post_data, function (data, status) {
             M.Toast.dismissAll();
             M.toast({html: data.message, classes: 'rounded'})
             $('#pre-loader').hide()

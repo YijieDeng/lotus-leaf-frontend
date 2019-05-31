@@ -8,6 +8,8 @@ const fs = require('fs')
 const Utils = global.db.load_snap('common_snap')
 const moment = require('moment')
 
+router.prefix(config.rootDir)
+
 /**
  * Calculate the rate of reduction on number of data in a dataset.
  * this is for avoid low rendering efficiency on frontend.
