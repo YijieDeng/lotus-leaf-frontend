@@ -18,7 +18,7 @@ Run `npm install` to install dependencies. Some of the
 libraries are static files in the project.
 
 Then copy `config-example.js` as `config.js` and modify
-the configuration (Database, Port, etc). Turn `dev` to `true` will
+the configuration (Database, Port, etc). Set `dev` to `true` will
 print logs to the terminal.
 
 Finally run `npm start` or `node app.js`. If you encountered a database error, check whether you have started
